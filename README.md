@@ -56,16 +56,26 @@ open. Dough may stick there; `--smooth 0.8` would close it.
 
 </details>
 
-## Why not just model it in CAD?
+## Why not CAD or a similar tool?
 
-A working cutter needs more than an extruded outline. Cookie Forge builds and checks the details:
+It's faster. In CAD you trace the outline, offset the wall, model the bevel and the flange, and
+check the fit yourself. Here you send a picture and answer a few questions, and the profile is
+already tuned for cutting dough:
 
-- **Print-ready STL, verified.** 0.45 mm beveled cutting edge, 1.2 mm wall, 5 mm grip flange;
-  every model must pass a watertight check before export.
-- **You approve first.** Size, bed fit, warnings and a 2D preview come before any STL.
-- **Imprint or not.** The agent asks whether inner lines should press into the dough.
-- **Smoother outlines on request.** Compare three simplification levels, or keep the original.
-- **Edits never overwrite.** A new size or outline is built as a new version; earlier STLs stay.
+- The cutting edge is 0.45 mm, one nozzle line: thin enough to cut, wide enough that the
+  slicer doesn't drop it.
+- The 10° bevel is on the outside only, so the side of the cookie comes out straight and the
+  dough is pushed toward the scraps.
+- The 1.2 mm wall prints solid in three lines, and the 5 × 2 mm flange gives you something to
+  press on and holds the print on the bed without a brim.
+- Imprint ridges are set from your dough thickness to press about 1.5 mm in, a depth that tends
+  to stay visible after baking.
+- The model is mirrored, so text and left-facing animals come out the right way round.
+- You're warned about parts too thin to survive and notches where dough will stick, and the
+  cutter is checked against your printer's bed.
+- Every STL is checked to be watertight and a single solid before you get it.
+
+Need it smaller or smoother later? Ask, and it's rebuilt as a new version next to the old one.
 
 ## Quick start
 
