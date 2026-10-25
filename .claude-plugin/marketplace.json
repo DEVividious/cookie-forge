@@ -1,0 +1,15 @@
+{
+  "name": "cookie-forge",
+  "owner": {
+    "name": "Vividious",
+    "url": "https://github.com/DEVividious"
+  },
+  "description": "Cookie Forge: turn a drawing into a 3D-printable cookie cutter.",
+  "plugins": [
+    {
+      "name": "cookie-forge",
+      "source": "./plugins/cookie-forge",
+      "description": "Turn a drawing into a 3D-printable cookie cutter STL, with preview approval and an optional imprint."
+    }
+  ]
+}

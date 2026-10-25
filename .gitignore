@@ -2,12 +2,12 @@
 # except the files and directories listed below; add a new top-level entry here on purpose.
 /*
 !/.gitignore
-!/SKILL.md
+!/.claude-plugin/
 !/README.md
 !/CHANGELOG.md
 !/LICENSE
+!/plugins/
 !/scripts/
-!/references/
 !/examples/
 !/tests/
 !/.github/

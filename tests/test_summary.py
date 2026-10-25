@@ -6,7 +6,7 @@ import os
 import re
 import unittest
 
-from helpers import ROOT, project, run
+from helpers import SKILL, project, run
 
 SECTIONS_EN = ["Basics", "Size and printing", "Construction", "Geometry processing", "Checks",
                "Warnings and automatic fixes", "Planned files", "Build command"]
@@ -109,7 +109,7 @@ class ImprintDepth(unittest.TestCase):
 class Translations(unittest.TestCase):
     def test_every_message_has_a_polish_version(self):
         keys, tables = set(), {}
-        for path in glob.glob(os.path.join(ROOT, "scripts", "forge", "**", "*.py"), recursive=True):
+        for path in glob.glob(os.path.join(SKILL, "scripts", "forge", "**", "*.py"), recursive=True):
             with open(path, encoding="utf-8") as f:
                 tree = ast.parse(f.read())
             keys |= {n.args[0].value for n in ast.walk(tree)

@@ -23,7 +23,7 @@ must set to that absolute directory, replacing the example path:
 
 ```bash
 COOKIE_FORGE_SKILL_DIR="/absolute/path/to/cookie-forge"
-uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" --help
+uv run --locked "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" --help
 ```
 
 The examples use POSIX shell syntax; adapt quoting and variable syntax to the available shell.
@@ -32,7 +32,8 @@ absolute script path directly. Run commands from the user's project directory (s
 tool's working directory there); never change into the skill installation to run them. All
 files go to `./cookie-forge-output/`, grouped by cutter, see "Output files".
 
-Use Python 3.10+ and `uv run`, which installs the script's declared libraries. If `uv` is missing,
+Use Python 3.10+ and `uv run --locked`, which installs the exact library versions pinned in
+`scripts/cookie_forge.py.lock`; keep the flag on every call. If `uv` is missing,
 suggest `curl -LsSf https://astral.sh/uv/install.sh | sh` on Linux/macOS, or
 `winget install --id=astral-sh.uv -e` in Windows PowerShell. Reopen the host if its PATH is stale.
 The first run needs package-download access and a writable uv cache; follow the host's permission flow if access is blocked.
@@ -86,7 +87,7 @@ Before going on, check the reading. The first reading uses `--imprint auto`, so 
 up in blue and you can tell whether there is anything to imprint:
 
 ```bash
-uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" analyze template.png --name reindeer --imprint auto
+uv run --locked "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" analyze template.png --name reindeer --imprint auto
 ```
 
 The script prints where it saved the reading preview (`cookie-forge-output/projects/<name>/previews/reading-*.png`) and
@@ -121,7 +122,7 @@ the imprint and the reading shows inner lines doubled, or a blue line running al
 cutting edge, the lines touch the outline: offer to prepare a version where they stop 1 mm short of it,
 
 ```bash
-uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" prepare template.png --name cat --size 80
+uv run --locked "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" prepare template.png --name cat --size 80
 ```
 
 then look at `cookie-forge-output/projects/<name>/previews/prepare-*.png` (cleared spots in red) and analyze the new version it
@@ -134,7 +135,7 @@ open arc, so show both images to the user before going on.
 Ask which printer they have. Bed sizes come from `references/printers.md`:
 
 ```bash
-uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" printers "ender 3"
+uv run --locked "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" printers "ender 3"
 ```
 
 If the printer is not on the list, ask for the bed size (width × depth in mm; it is in the
@@ -146,7 +147,7 @@ Then use `--bed "name"` or `--bed 220x220`.
 Show the size table from the script and let them choose, or accept the user's own dimensions:
 
 ```bash
-uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" analyze template.png --bed K1C
+uv run --locked "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" analyze template.png --bed K1C
 ```
 
 The table has variants S/M/L/XL (60/80/100/120 mm longest side of the cookie), MAX (the largest
@@ -163,7 +164,7 @@ longest side of the cookie (the cutting edge), without the flange.
 Once the size is chosen, check the outline with the same flags you will build with:
 
 ```bash
-uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" simplify template.png --size 80 --name cat
+uv run --locked "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" simplify template.png --size 80 --name cat
 ```
 
 The first line says whether the outline is complex (a notch narrower than 2 mm, or many small
@@ -198,7 +199,7 @@ cutting edge 0.45 mm with a 10° outer bevel (vertical inside, so the side of th
 straight and the wedge pushes the dough outwards), flange 5 × 2 mm lying on the bed. Imprint
 (only with `--imprint auto`) set by `--dough` (or 3.5 mm lower than the cutting edge). Don't ask about these parameters; show them in the summary and
 change them only on request (`--blade-angle`, `--height`, `--wall`, `--flange`,
-`--imprint-drop` etc., full list: `uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" build --help`). For
+`--imprint-drop` etc., full list: `uv run --locked "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" build --help`). For
 firm dough (gingerbread, shortbread) suggest 10-12°, for soft and thick dough (sugar paste,
 fondant) 15-20° and a height of 12-15 mm.
 
@@ -220,14 +221,14 @@ fondant) 15-20° and a height of 12-15 mm.
   user wants something that flags can't do, draw a new PNG template with a simple PIL script
   (black on white, 1500-2000 px) and show it for approval before going on. Save drawn or edited
 templates to the `next_template` path printed by
-`uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" paths --name cat`.
+`uv run --locked "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" paths --name cat`.
 
 ### 6. Summary and approval
 
 Before building, run a dry run with a 2D preview:
 
 ```bash
-uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" build template.png --size 80 --bed K1C --name cat \
+uv run --locked "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" build template.png --size 80 --bed K1C --name cat \
     --dry-run --preview-2d
 ```
 
@@ -280,7 +281,7 @@ The standard view (generated by the script; never retype or recompute it). Secti
 
 ### Build command
 ```bash
-uv run …/scripts/cookie_forge.py build cat.png --size 80 --bed K1C --name cat
+uv run --locked …/scripts/cookie_forge.py build cat.png --size 80 --bed K1C --name cat
 ```
 ````
 
@@ -294,7 +295,7 @@ Run the command from the "Build command" section of the approved summary, preser
 argument (adapt only shell quoting if needed), e.g.:
 
 ```bash
-uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" build template.png --size 80 --bed K1C --name cat
+uv run --locked "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" build template.png --size 80 --bed K1C --name cat
 ```
 
 The script checks the STL (it must be "OK": watertight, a single solid), writes it to

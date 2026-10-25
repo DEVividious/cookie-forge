@@ -1,4 +1,4 @@
-"""Shared helpers: the script is started with `uv run` (it installs its own dependencies)."""
+"""Shared helpers: the script runs with `uv run --locked` (it installs the pinned dependencies)."""
 import json
 import os
 import shutil
@@ -6,13 +6,15 @@ import subprocess
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SCRIPT = os.path.join(ROOT, "scripts", "cookie_forge.py")
+PLUGIN = os.path.join(ROOT, "plugins", "cookie-forge")
+SKILL = os.path.join(PLUGIN, "skills", "cookie-forge")
+SCRIPT = os.path.join(SKILL, "scripts", "cookie_forge.py")
 FIXTURES = os.path.join(ROOT, "tests", "fixtures")
 
 
 def run(*args, cwd, check=True):
     env = dict(os.environ, COOKIE_FORGE_STRICT="1")   # a missing Polish message is an error
-    r = subprocess.run(["uv", "run", "--quiet", SCRIPT, *args], cwd=cwd, env=env,
+    r = subprocess.run(["uv", "run", "--quiet", "--locked", SCRIPT, *args], cwd=cwd, env=env,
                        capture_output=True, text=True, timeout=600)
     if check and r.returncode != 0:
         raise AssertionError(f"exit {r.returncode}\n{r.stdout}\n{r.stderr}")

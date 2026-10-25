@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.4.0
 
 - Organize `cookie-forge-output/` into `exports/<date>/` for each day's STL batch and
   `projects/<name>/` for templates, previews and build history. Store each printable STL once.
@@ -12,8 +12,12 @@
 - Redesign the README around a gallery of real outline-only and imprint STLs and a five-step
   quick start; `render_showcase.py` also renders the gallery images.
 - Release the project under the MIT license.
-
-
+- Ship the skill as a plugin: it now lives in `plugins/cookie-forge/skills/cookie-forge/` with
+  its `scripts/` and `references/`. `plugins/cookie-forge/.claude-plugin/plugin.json` and the
+  repository's `.claude-plugin/marketplace.json` let Claude Code and Codex install it from
+  GitHub, and an install copies only the plugin folder. The plugin `version` follows `VERSION`.
+- Pin the script's libraries in `cookie_forge.py.lock` and run it with `uv run --locked`,
+  including the build command in the dry-run summary.
 - Made the skill model-agnostic, with host-specific installation and invocation examples in
   the README.
 - Skill commands use an explicitly initialized, quoted skill-directory variable; scripts and

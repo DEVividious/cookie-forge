@@ -29,7 +29,7 @@ def build_args():
 
 
 def build_command():
-    return "uv run " + shlex.join([sys.argv[0]] + build_args())
+    return "uv run --locked " + shlex.join([sys.argv[0]] + build_args())
 
 
 def cmd_build(args):
