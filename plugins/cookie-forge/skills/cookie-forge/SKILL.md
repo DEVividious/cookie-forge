@@ -10,7 +10,7 @@ it shows what it understood, and it builds the STL only after approval. Reuse ch
 supplied by the user (name, printer, size, imprint); ask only for missing information. The workflow is
 independent of the model and host application. All geometry is computed by `scripts/cookie_forge.py`.
 
-Don't: build the STL before the summary is approved (step 6), guess the printer or the size,
+Don't: build the STL before the user approves the dry run (step 6), guess the printer or the size,
 write your own geometry generator when the script handles the case, or make up file names and
 paths: the script chooses them and prints the real ones; quote those.
 
@@ -43,7 +43,7 @@ tool, not a text-only file reader. If no image viewer is available, give the use
 path and ask them to inspect it; do not claim to have seen it. For choices such as printer and
 size, use a multiple-choice question tool when available in the current mode; otherwise ask
 the same question in the conversation and wait for the answer. Let the user give descriptions
-and templates in a normal message. Keep the summary approval in step 6 in every host.
+and templates in a normal message. Keep the approval in step 6 in every host.
 
 Native Windows has not been validated end to end. Printed build commands currently use POSIX
 quoting: on another shell, preserve the exact argument values but adapt quoting and variable
@@ -58,8 +58,7 @@ prints its tables, summary and preview labels in English by default; add `--lang
 with `--lang en` and translate only the labels and descriptions when you show the output: keep
 every number, unit, file name and command exactly as printed, only switching the decimal
 separator to the user's convention (e.g. a comma in German or French). Never round, re-estimate
-or recalculate a value yourself. Notes you write for the user (`notes.md`) are also in their
-language.
+or recalculate a value yourself.
 
 ## Workflow
 
@@ -197,7 +196,7 @@ existing single-template project: only the options given on the command line cha
 The standard profile (described in `references/geometry.md`): height 18 mm, wall 1.2 mm,
 cutting edge 0.45 mm with a 10° outer bevel (vertical inside, so the side of the cookie is
 straight and the wedge pushes the dough outwards), flange 5 × 2 mm lying on the bed. Imprint
-(only with `--imprint auto`) set by `--dough` (or 3.5 mm lower than the cutting edge). Don't ask about these parameters; show them in the summary and
+(only with `--imprint auto`) set by `--dough` (or 3.5 mm lower than the cutting edge). Don't ask about these parameters; the card and the `--details` summary show them;
 change them only on request (`--blade-angle`, `--height`, `--wall`, `--flange`,
 `--imprint-drop` etc., full list: `uv run --locked "${FORGE_SKILL_DIR}/scripts/cookie_forge.py" build --help`). For
 firm dough (gingerbread, shortbread) suggest 10-12°, for soft and thick dough (sugar paste,
@@ -223,7 +222,7 @@ fondant) 15-20° and a height of 12-15 mm.
 templates to the `next_template` path printed by
 `uv run --locked "${FORGE_SKILL_DIR}/scripts/cookie_forge.py" paths --name cat`.
 
-### 6. Summary and approval
+### 6. Approval card
 
 Before building, run a dry run with a 2D preview:
 
@@ -232,66 +231,49 @@ uv run --locked "${FORGE_SKILL_DIR}/scripts/cookie_forge.py" build template.png 
     --dry-run --preview-2d
 ```
 
-A dry run builds no STL: it writes only `dry-run.json` (the settings to approve) and
-a version-named PNG in the cutter's `previews/` folder; the JSON stays in the build directory. It prints the summary in the
-standard format (below; one block per cutter). Look at the 2D preview, paste the summary to the
-user in full and unchanged (for languages other than English and Polish, translate labels only,
-as described in "Language"), add one sentence about what the preview shows, and ask plainly:
-**do you approve, or do you have remarks / special wishes?** Build only after a "yes". Turn
-every remark into a flag, repeat the dry run and show the changed rows of the new output.
+A dry run builds no STL: it writes only `dry-run.json` (the settings to approve) in the build
+directory and a version-named PNG in the cutter's `previews/` folder. It prints a short approval
+card for each cutter (below). Show the user the card's list unchanged (for languages other than
+English and Polish, translate labels only, as described in "Language") together with the preview
+image itself; give the preview path only if you cannot display images. Don't show the "Build
+command" section: it is for you. Add one sentence about what the preview shows, and ask plainly:
+**do you approve, or would you like to change something?** Build only after a "yes". Turn every
+remark into a flag, repeat the dry run and show the new card.
 
-The "Project directory" row says what the build will do: a new directory, a new version
-(`builds/80mm-v2/` and `exports/<date>/cat-80mm-v2.stl`, because a build of that size with other settings exists), or nothing at all
-(identical settings already built). Mention a new version or an identical build in your
-sentence; don't ask anything extra.
+The card holds what the user decides on, every warning and each automatic fix that changes the
+cutter. A line such as "New version: …" or "Already built with identical settings: …" says what
+the build will do; mention it in your sentence. Explain warnings in plain words: a narrow notch
+holds dough, a thin part breaks. When the user asks for details, or you need a value that is
+not on the card, repeat the same dry run with `--details`: it prints the full project summary
+(basics, size and printing, construction, geometry processing, checks with measured values,
+planned files). Quote values from the script; never retype or recompute them.
 
-The standard view (generated by the script; never retype or recompute it). Sections, abridged:
+The card, as the script prints it:
 
 ````
-## Project summary: cat
+## cat: ready to build?
 
-### Basics
-| Item | Value |
-|---|---|
-| Name | cat |
-| Source | cat.png |
-| Printer | Creality K1C (bed 220 × 220 × 250 mm) |
-| Orientation | cookie = template (the STL model is mirrored, because the cutter is used upside down) |
-| Stage | dry run: nothing built yet |
+- Cookie 76.1 × 80.0 mm, with the flange 86.1 × 90.0 mm
+- Printer: Creality K1C (bed 220 × 220 × 250 mm), 41% of the longer bed side
+- Outline only, no imprint
+- 18.0 mm tall, cutting edge 0.45 mm with a 10° bevel
+- Warning: the narrowest notch is about 1.0 mm - dough may stick in the cutter (recommended ≥ 2.0 mm)
 
-### Size and printing          cookie and footprint size, requested size, bed usage, height, step, margin
-### Construction               wall, cutting edge, bevel, flange, imprint, holes, bridges
-### Geometry processing        smoothing / simplification at model scale (and in template px), size correction, threshold
-### Checks                     | Check | Result | Recommended | Status |: thinnest feature, narrowest notch, bed fit, height vs Z
-### Warnings and automatic fixes
-**Warnings**
-- the narrowest notch is about 1.5 mm - dough may stick in the cutter (recommended ≥ 2.0 mm)
-**Automatic fixes**
-- added 4 bridges joining loose parts (imprint/holes) to the flange
-
-### Planned files
-| File | Contents | Status |
-|---|---|---|
-| `cookie-forge-output/exports/2026-12-01/cat-80mm-v1.stl` | STL model for printing | will be created after approval |
-| `cookie-forge-output/projects/cat/previews/80mm-v1-model.png` | preview: top view, wall cross-section, 3D model | will be created after approval |
-| `cookie-forge-output/projects/cat/builds/80mm-v1/source.png` | template used (exact copy) | will be created after approval |
-| `cookie-forge-output/projects/cat/builds/80mm-v1/project.json` | project manifest: parameters, results, STL check | will be created after approval |
-| `cookie-forge-output/projects/cat/builds/80mm-v1/dry-run.json` | dry-run report with the settings to approve | created by this dry run |
-| `cookie-forge-output/projects/cat/previews/80mm-v1-dry-run.png` | 2D preview from this dry run | created by this dry run |
+Preview: `cookie-forge-output/projects/cat/previews/80mm-v1-dry-run.png`
 
 ### Build command
+
 ```bash
 uv run --locked …/scripts/cookie_forge.py build cat.png --size 80 --bed K1C --name cat
 ```
 ````
 
-Status words in the Checks table (`OK`, `NARROW`, `DELICATE`, `TOO THIN`, `DOES NOT FIT`,
-`TOO TALL`) are the ones to mention when you add your sentence. The build command in the last
-section is exactly what step 7 runs: the same flags without `--dry-run` / `--preview-2d`.
+The build command is exactly what step 7 runs: the same flags without `--dry-run`,
+`--preview-2d` and `--details`.
 
-### 7. Build, check, hand over
+### 7. Build and hand over
 
-Run the command from the "Build command" section of the approved summary, preserving every
+Run the command from the "Build command" section of the approved card, preserving every
 argument (adapt only shell quoting if needed), e.g.:
 
 ```bash
@@ -299,46 +281,41 @@ uv run --locked "${FORGE_SKILL_DIR}/scripts/cookie_forge.py" build template.png 
 ```
 
 The script checks the STL (it must be "OK": watertight, a single solid), writes it to
-`cookie-forge-output/exports/<date>/<name>-<size>mm-vN.stl`, writes a version-named PNG
-in `previews/` (top view, cross-section, 3D model),
-the template copy `source.<ext>` and `project.json` to `cookie-forge-output/projects/<name>/builds/<size>mm-v1/` and prints a short
+`cookie-forge-output/exports/<date>/<name>-<size>mm-vN.stl` and a version-named model preview to
+`previews/`, keeps the template copy and `project.json` in
+`cookie-forge-output/projects/<name>/builds/<size>mm-vN/` for later changes, and prints a short
 report:
 
 ```
 ## Cutter reindeer: ready
 
-- Cookie size: 88.2 × 100.0 mm
+- Cookie size: 87.9 × 100.0 mm
 - Printer: Creality K1C (bed 220 × 220 × 250 mm)
-- STL check: OK (watertight, 1 solid(s), 82522 triangles, 14.1 cm³ ≈ 18 g PLA)
-- Warning: the narrowest notch is about 1.5 mm - dough may stick in the cutter (recommended ≥ 2.0 mm)
+- STL check: OK (watertight, 1 solid(s), 73216 triangles, 12.7 cm³ ≈ 16 g PLA)
+- Warning: the narrowest notch is about 1.4 mm - dough may stick in the cutter (recommended ≥ 2.0 mm)
 
 Files:
 
 - `cookie-forge-output/exports/2026-12-01/reindeer-100mm-v1.stl`: 3D print model
 - `cookie-forge-output/projects/reindeer/previews/100mm-v1-model.png`: cutter preview
-- `cookie-forge-output/projects/reindeer/builds/100mm-v1/source.png`: template used
-- `cookie-forge-output/projects/reindeer/builds/100mm-v1/project.json`: project parameters
-
-Location: `cookie-forge-output/projects/reindeer/builds/100mm-v1/`
 ```
 
 A "Note: these settings were not shown in a dry run" line means the build skipped step 6;
 that should not happen.
 
-Look at the printed model preview first. If the check failed, the model stays in the project directory as
-`cutter-rejected.stl` and never reaches `exports/`; don't hand it over; change the
-parameters (most often `--smooth 0.5` or `--no-bridges` plus a manual description of the
-problem helps). Otherwise give the user this report in their language (with `--lang pl` it is
-already Polish): keep the file names and paths exactly as printed, and make them clickable links
-when your environment supports links to local files. If the report says "already built",
-nothing was rebuilt; say so and offer `--overwrite` (rebuild in place) or `--new-version` (a
-separate copy) only if the user wants a rebuild.
+Look at the model preview first. If the check failed, the model stays in the build directory as
+`cutter-rejected.stl` and never reaches `exports/`; don't hand it over; change the parameters
+(most often `--smooth 0.5` or `--no-bridges` plus a manual description of the problem helps).
+Otherwise hand over the report in the user's language (with `--lang pl` it is already Polish)
+and show the model preview. Keep file names and paths exactly as printed, and make the STL a
+clickable link or a download when your environment supports it. If the report says "already
+built", nothing was rebuilt; say so and offer `--overwrite` (rebuild in place) or
+`--new-version` (a separate copy) only if the user wants a rebuild.
 
-Then write `notes.md` into the printed location, in the user's language: the summary from
-step 6, the command and the print settings from `references/geometry.md` (section "Printing").
-Finish with a sentence about the orientation on the bed (flange down, no supports) and printing
-tips. Remind them that the cutter touches raw dough: PLA or PETG, wash by hand in lukewarm
-water, not in the dishwasher.
+End with one short paragraph: print it flange down, as in the STL, without supports; use PLA or
+PETG and wash it by hand in lukewarm water, not in the dishwasher, because it touches raw dough.
+Give the full print settings from `references/geometry.md` (section "Printing") only when asked,
+and write no files of your own.
 
 ## Output files
 
@@ -358,14 +335,13 @@ cookie-forge-output/projects/<name>/
     source.png                       exact template copy (original format retained)
     project.json                     schema 2, layout 3; relative file references
     dry-run.json                     approved settings, if a dry run was done
-    notes.md                         your notes for the user
   builds/100mm-v2/                    changed settings, original retained
 ```
 
 Printable STL files live only in `cookie-forge-output/exports/<local-build-date>/`, named
 `<name>-<size>mm-vN.stl`. This gives the user one folder for a day's batch. Build manifests
 point to those files with relative paths; never create duplicate copies in `builds/`.
-Hand over the STL link and the daily folder link. Identical models stay under their original
+Hand over the STL link. Identical models stay under their original
 date; `--overwrite` moves a rebuilt version to today's exports and removes its older STL.
 
 Link previews directly. Reading, preparation and simplification previews are already preserved

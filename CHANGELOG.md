@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.0
+
+- A dry run prints a short approval card by default: cookie size and footprint, bed usage,
+  imprint, height and cutting edge, every warning and each automatic fix that changes the
+  cutter, then the build command. `--details` prints the full project summary as before, and
+  `--json` returns both.
+- The build report lists only the STL and its preview. The template copy and `project.json`
+  stay in the build directory for `--from`, and `--json` still lists every file.
+- The skill shows the card next to the preview and keeps the build command to itself. It ends
+  with one short note on printing and washing, and no longer writes `notes.md`.
+
 ## 1.4.1
 
 - A missing uv is answered with a link to uv's installation guide instead of a `curl | sh`

@@ -1,7 +1,7 @@
 {
   "name": "cookie-forge",
   "displayName": "Cookie Forge",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "Turn a drawing into a 3D-printable cookie cutter STL: template reading, printer fit, sizing, preview approval and an optional imprint.",
   "author": {
     "name": "Vividious",

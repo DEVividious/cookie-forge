@@ -75,6 +75,8 @@ def build_parser():
     add_source_options(b)
     b.add_argument("--dry-run", action="store_true", help="only the project summary and dry-run files, no STL")
     b.add_argument("--preview-2d", action="store_true", help="with --dry-run also save a version-named PNG in previews/")
+    b.add_argument("--details", action="store_true",
+                   help="with --dry-run print the full project summary instead of the short approval card")
     b.add_argument("--no-3d", action="store_true", help="skip the 3D view in the preview (faster)")
     b.add_argument("--overwrite", action="store_true", help="rebuild in place: replace the identical or latest build of this size")
     b.add_argument("--new-version", action="store_true", help="always write a new version directory (<size>mm-vN)")

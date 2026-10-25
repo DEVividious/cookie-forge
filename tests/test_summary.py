@@ -33,7 +33,7 @@ class DryRunSummary(unittest.TestCase):
     def setUpClass(cls):
         cls.proj = project("gingerbread.png")
         common = ["build", "gingerbread.png", "--size", "100", "--bed", "K1C", "--name", "man",
-                  "--dry-run", "--preview-2d", "--smooth", "0.5"]
+                  "--dry-run", "--preview-2d", "--details", "--smooth", "0.5"]
         cls.en = run(*common, cwd=cls.proj)
         cls.pl = run(*common, "--lang", "pl", cwd=cls.proj)
 
@@ -85,10 +85,11 @@ class DryRunSummary(unittest.TestCase):
 class ImprintDepth(unittest.TestCase):
     def test_dough_sets_the_ridge_for_a_fixed_imprint_depth(self):
         proj = project("gingerbread.png")
-        out = run("build", "gingerbread.png", "--size", "80", "--imprint", "auto", "--dough", "6", "--dry-run", cwd=proj)
+        out = run("build", "gingerbread.png", "--size", "80", "--imprint", "auto", "--dough", "6", "--dry-run",
+                  "--details", cwd=proj)
         self.assertIn("| Imprint ridge height | 13.5 mm, 4.5 mm below the cutting edge |", out)
         self.assertIn("| Imprint depth | 1.5 mm in 6.0 mm dough (--dough 6) |", out)
-        default = run("build", "gingerbread.png", "--size", "80", "--imprint", "auto", "--dry-run", cwd=proj)
+        default = run("build", "gingerbread.png", "--size", "80", "--imprint", "auto", "--dry-run", "--details", cwd=proj)
         self.assertIn("| Imprint ridge height | 14.5 mm, 3.5 mm below the cutting edge |", default)
         self.assertIn("dough thickness minus 3.5 mm", default)
 
@@ -101,9 +102,50 @@ class ImprintDepth(unittest.TestCase):
 
     def test_outline_only_is_the_default(self):
         proj = project("gingerbread.png")
-        out = run("build", "gingerbread.png", "--size", "80", "--dry-run", cwd=proj)
+        out = run("build", "gingerbread.png", "--size", "80", "--dry-run", "--details", cwd=proj)
         self.assertIn("| Imprint | off (--imprint none) |", out)
         self.assertNotIn("Imprint ridge height", out)
+
+
+class ApprovalCard(unittest.TestCase):
+    """The default dry-run output: a short card the user approves, with the full summary behind --details."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.proj = project("gingerbread.png")
+        common = ["build", "gingerbread.png", "--size", "100", "--bed", "K1C", "--name", "man",
+                  "--dry-run", "--preview-2d", "--smooth", "0.5"]
+        cls.card = run(*common, cwd=cls.proj)
+        cls.pl = run(*common, "--lang", "pl", cwd=cls.proj)
+        cls.full = run(*common, "--details", cwd=cls.proj)
+
+    def test_card_ends_with_the_same_build_command(self):
+        self.assertTrue(self.card.startswith("## man: ready to build?\n"))
+        self.assertEqual(re.findall(r"^### (.+)$", self.card, flags=re.M), ["Build command"])
+        command = r"### Build command\n\n```bash\n(.+)\n```"
+        self.assertEqual(re.search(command, self.card).group(1), re.search(command, self.full).group(1))
+
+    def test_card_keeps_sizes_and_every_warning(self):
+        self.assertIn(f"- Cookie {row(self.full, 'Cookie size (cutting edge), W × D')},", self.card)
+        warnings = self.full.split("**Warnings**")[1].split("**Automatic fixes**")[0]
+        for line in re.findall(r"^- (.+)$", warnings, flags=re.M):
+            if line != "none":
+                self.assertIn(f"- Warning: {line}", self.card)
+
+    def test_card_leaves_the_routine_size_correction_to_the_details(self):
+        proj = project("star.png")              # smoothing trims its tips, so the size is corrected
+        dry_run = ["build", "star.png", "--size", "80", "--dry-run"]
+        self.assertIn("scaled by ×", run(*dry_run, "--details", cwd=proj))
+        self.assertNotIn("scaled by ×", run(*dry_run, cwd=proj))
+
+    def test_card_follows_the_language(self):
+        self.assertTrue(self.pl.startswith("## Foremka man: gotowa do zbudowania?\n"))
+        self.assertIsNone(re.search(r"\d\.\d", prose(self.pl)), "decimal point in Polish output")
+
+    def test_build_report_lists_only_the_stl_and_its_preview(self):
+        report = run("build", "gingerbread.png", "--size", "100", "--name", "man", "--no-3d", cwd=self.proj)
+        files = re.findall(r"^- `([^`]+)`", report, flags=re.M)
+        self.assertEqual([os.path.basename(f) for f in files], ["man-100mm-v1.stl", "100mm-v1-model.png"])
 
 
 class Translations(unittest.TestCase):

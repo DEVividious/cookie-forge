@@ -13,7 +13,7 @@ from ..i18n import Msg
 from ..errors import fail
 from ..presentation.preview import draw_preview
 from ..presentation.report import build_report, cutter_result
-from ..presentation.summary import size_note, summary_md
+from ..presentation.summary import card_md, size_note, summary_md
 from ..printers import parse_bed
 from ..project.layout import (DRY_RUN_FILE, MANIFEST_FILE, REJECTED_STL_FILE,
                               built_manifest, choose_target, cutter_dir, manifest_stl, planned_files, sha256_file,
@@ -25,7 +25,7 @@ from ..template.collect import collect_shapes
 
 def build_args():
     """Arguments that build exactly what this run describes (without the dry-run flags)."""
-    return [a for a in sys.argv[1:] if a not in ("--dry-run", "--preview-2d", "--json")]
+    return [a for a in sys.argv[1:] if a not in ("--dry-run", "--preview-2d", "--details", "--json")]
 
 
 def build_command():
@@ -105,10 +105,10 @@ def _dry_run(args, designs, options):
         pr.files = planned_files(pr, args.preview_2d)
         write_json(os.path.join(pr.out_dir, DRY_RUN_FILE),
                    manifest(pr, "dry-run", options, dict(decision=pr.decision, build_args=build_args())))
-        md = summary_md(pr, command)
-        results.append(dict(cutter_result(pr), summary_md=md))
+        full, card = summary_md(pr, command), card_md(pr, command)
+        results.append(dict(cutter_result(pr), summary_md=full, card_md=card))
         if not args.json:
-            print(md + "\n")
+            print((full if args.details else card) + "\n")
     if args.json:
         print(json.dumps(dict(stage="dry-run", cutters=results), ensure_ascii=False, indent=2))
 

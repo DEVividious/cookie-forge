@@ -59,11 +59,11 @@ class Build(unittest.TestCase):
     def test_level_goes_to_the_summary_and_makes_a_new_version(self):
         proj = project("gingerbread.png")
         base = ["build", "gingerbread.png", "--size", "80", "--name", "man", "--no-3d"]
-        plain = run(*base, "--dry-run", cwd=proj)
+        plain = run(*base, "--dry-run", "--details", cwd=proj)
         self.assertIn("| Outline simplification level | off (--simplify-level none) |", plain)
         run(*base, cwd=proj)
         self.assertEqual(run_json(*base, "--simplify-level", "none", cwd=proj)["cutters"][0]["decision"], "identical")
-        medium = run(*base, "--simplify-level", "medium", "--dry-run", cwd=proj)
+        medium = run(*base, "--simplify-level", "medium", "--dry-run", "--details", cwd=proj)
         self.assertRegex(medium, r"\| Outline simplification level \| medium: wiggles averaged over [\d.]+ mm")
         self.assertIn("cookie-forge-output/projects/man/builds/80mm-v2/", medium)
         self.assertGreater(notch(medium), notch(plain))

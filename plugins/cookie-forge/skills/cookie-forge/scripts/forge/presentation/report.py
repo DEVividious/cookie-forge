@@ -30,18 +30,14 @@ def build_report(pr, chk, ok, matches_dry_run):
     if pr.decision == "new_version":
         out.append(f"- {t('Note')}: {t('a build of this size with other settings exists and was left untouched; this is a new version')}")
     out += ["", f"{t('Files')}:", ""]
-    for path, role, _ in pr.files:
-        out.append(f"- `{show(path)}`: {t(REPORT_ROLES[role])}")
-    out += ["", f"{t('Location')}: `{show(pr.out_dir, True)}`"]
+    # the template copy and project.json stay in the build directory; --json lists every file
+    out += [f"- `{show(path)}`: {t(REPORT_ROLES[role])}" for path, role, _ in pr.files if role in REPORT_ROLES]
     return "\n".join(out)
 
 
 REPORT_ROLES = {
     "stl": "3D print model",
     "preview": "cutter preview",
-    "source": "template used",
-    "imprint_source": "imprint template used",
-    "manifest": "project parameters",
 }
 
 

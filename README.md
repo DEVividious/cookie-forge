@@ -189,30 +189,26 @@ In the **Claude Code chat**, not the terminal:
 ### 4. Approve the preview
 
 The agent shows how it read the template and asks only for what is missing: printer, size, and
-whether inner lines become an imprint. Then it shows the planned size, bed fit, checks and a 2D
-preview. **It builds nothing until you approve.**
+whether inner lines become an imprint. Then it shows a short card with the size, bed fit and any
+warnings, next to a 2D preview. **It builds nothing until you approve.**
 
 <details>
-<summary>What the reindeer summary flags</summary>
+<summary>What the reindeer approval card says</summary>
 
 <br>
 
-An excerpt of the real dry-run summary for the reindeer in step 2:
+The real card for the reindeer in step 2, shown next to its 2D preview:
 
-| Check | Result | Recommended | Status |
-|---|---|---|---|
-| Thinnest cookie feature | ≈ 9.6 mm | ≥ 3.0 mm | OK |
-| Narrowest notch | ≈ 1.4 mm | ≥ 2.0 mm | NARROW |
-| Fits on the bed | 97.9 × 110.0 mm in 200 × 200 mm | 10.0 mm margin, 90° rotation allowed | OK |
-| Height vs printer Z | 18.0 mm of 250 mm | — | OK |
+> - Cookie 87.9 × 100.0 mm, with the flange 97.9 × 110.0 mm
+> - Printer: Creality K1C (bed 220 × 220 × 250 mm), 50% of the longer bed side
+> - Outline only, no imprint
+> - 18.0 mm tall, cutting edge 0.45 mm with a 10° bevel
+> - Warning: the narrowest notch is about 1.4 mm - dough may stick in the cutter (recommended ≥ 2.0 mm)
 
-> **Warnings**
-> - the narrowest notch is about 1.4 mm - dough may stick in the cutter (recommended ≥ 2.0 mm)
-
-The full summary also lists the construction, geometry processing and planned files. The 2D
-preview shows the top view and wall cross-section, like the left two panels of
-[this preview](examples/reindeer/100mm/preview.png). Reply with a change ("make it 80 mm",
-"smooth that notch") and the agent repeats the dry run before asking again.
+The preview shows the top view and wall cross-section, like the left two panels of
+[this preview](examples/reindeer/100mm/preview.png). Ask for details and the agent shows the
+full summary with every measured check. Reply with a change ("make it 80 mm", "smooth that
+notch") and the agent repeats the dry run before asking again.
 
 </details>
 
@@ -234,7 +230,8 @@ cd cookie-forge
 uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py build examples/reindeer/100mm/source.png --size 100 --bed K1C --name reindeer --output-dir demo --dry-run --preview-2d
 ```
 
-This prints the summary an agent would ask you to approve and writes the 2D preview to
+This prints the approval card an agent would show you (add `--details` for the full summary)
+and writes the 2D preview to
 `demo/projects/reindeer/previews/100mm-v1-dry-run.png`. The narrow-notch warning is expected.
 Build the STL:
 
@@ -299,6 +296,7 @@ current directory, not the script's location.
 uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py printers "k1c"                                  # printer bed
 uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py analyze cat.png --bed K1C --name cat           # reading + sizes
 uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py build cat.png --size 80 --bed K1C --name cat --dry-run --preview-2d
+uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py build cat.png --size 80 --bed K1C --name cat --dry-run --details  # full summary
 uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py build cat.png --size 80 --bed K1C --name cat
 uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py build sheet.pdf --split --size original --bed "Prusa MK4"
 uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py build --mode merge "star.png@0,0,70" "donut.png@0,-40,36" --size 90
@@ -357,8 +355,7 @@ Print from **`exports/<build-date>/`**: all cutters built that day are together,
 `<name>-<size>mm-vN.stl`. These are the **only printable STL files**, not extra copies.
 Each build's `project.json` points to its STL using a relative path. `builds/` keeps sources
 and settings; it does not keep a second STL. Back up or move the **whole workspace**, including
-previews and templates; `--from` infers the output root from the build's new location. The
-agent also writes `notes.md` there. Size is rounded to whole millimeters in directory names;
+previews and templates; `--from` infers the output root from the build's new location. Size is rounded to whole millimeters in directory names;
 exact dimensions are in the manifest.
 
 A dry run writes no STL. Identical settings reuse an existing STL; changed settings create a

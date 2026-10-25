@@ -1,5 +1,5 @@
-"""The dry-run summary (standard view). Every value comes from the Design computed by this run;
-Claude pastes it as is, so nothing has to be estimated or recalculated by hand."""
+"""The dry-run output: a short approval card by default and the full summary with --details. Every
+value comes from the Design computed by this run, so nothing has to be estimated or recalculated."""
 from ..config import GAP_MIN, GAP_SEARCH_MAX, LEVEL_NAMES, THIN_CRITICAL, THIN_MIN, THIN_SEARCH_MAX
 from ..geometry.design import bed_share
 from ..geometry.profile import bevel_height
@@ -41,6 +41,62 @@ STATUSES = {
     "exists": "exists (identical build)",
     "created": "created by this dry run",
 }
+
+
+# Every build reports this size correction after smoothing; the card leaves it to --details.
+ROUTINE_FIXES = {"after smoothing, scaled by × {f} so the longest side is exactly {size} mm"}
+
+
+def card_md(pr, command):
+    """Short approval card: what the user decides on, every warning and each fix that changes the
+    cutter, then the build command for the agent. The full summary comes with --details."""
+    p, k = pr.p, pr.shape
+    w, h = pr.cookie_dims
+    fw, fh = pr.footprint_dims
+    head = t("## {name}: ready to build?", name=k.name)
+    if pr.total > 1:
+        head += f" ({t('{i} of {n}', i=pr.index, n=pr.total)})"
+    out = [head, "", "- " + t("Cookie {w} × {h} mm, with the flange {fw} × {fh} mm",
+                              w=num(w), h=num(h), fw=num(fw), fh=num(fh))]
+    if pr.bed:
+        lin, _ = bed_share(pr)
+        out.append(f"- {t('Printer')}: " + t("{printer}, {lin} of the longer bed side",
+                                            printer=bed_label(pr.bed), lin=pct(lin)))
+    else:
+        out.append(f"- {t('Printer')}: {t('not specified (bed fit not checked)')}")
+    out.append(f"- {_card_imprint(pr)}")
+    out.append("- " + t("{h} tall, cutting edge {b} with a {a}° bevel",
+                        h=mm(p["height"]), b=mm(p["blade"]), a=val(p["blade_angle"], 0)))
+    if pr.simplified:
+        out.append(f"- {t('Outline simplification level')}: {t(LEVEL_NAMES[pr.simplified[0]])}")
+    if k.holes_cut:
+        out.append(f"- {t('Holes in the template')}: {t('{n} cut through', n=k.holes_cut)}")
+    outlines = outline_counts(k.body)[0]
+    if outlines > 1:
+        out.append(f"- {t('Separate cutting-edge outlines')}: {outlines}")
+    if pr.decision != "new":
+        decision = t(DECISIONS[pr.decision])
+        out.append(f"- {decision[:1].upper()}{decision[1:]}")
+    out += [f"- {t('Warning')}: {m}" for m in pr.warnings]
+    out += [f"- {t('Automatic fix')}: {m}" for m in pr.fixes if getattr(m, "text", None) not in ROUTINE_FIXES]
+    preview = [path for path, role, _ in pr.files if role == "dry_run_preview"]
+    if preview:
+        out += ["", f"{t('Preview')}: `{show(preview[0])}`"]
+    out += ["", f"### {t('Build command')}", "", "```bash", command, "```"]
+    return "\n".join(out)
+
+
+def _card_imprint(pr):
+    p = pr.p
+    if not pr.ridges:
+        if p.get("imprint") == "none":
+            return t("Outline only, no imprint")
+        return t("Outline only: the template has no inner lines")
+    ridges = count(len(pr.ridges), "ridge")
+    if p.get("dough"):
+        return t("Imprint: {ridges} pressing {d} into {t} dough",
+                 ridges=ridges, d=mm(p["dough"] - p["imprint_drop"], 1), t=mm(p["dough"]))
+    return t("Imprint: {ridges} ending {d} below the cutting edge", ridges=ridges, d=mm(p["imprint_drop"]))
 
 
 def summary_md(pr, command):

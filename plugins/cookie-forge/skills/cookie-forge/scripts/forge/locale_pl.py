@@ -4,6 +4,16 @@
 PL = {
     # summary
     "## Project summary: {name}": "## Podsumowanie projektu: {name}",
+    "## {name}: ready to build?": "## Foremka {name}: gotowa do zbudowania?",
+    "Cookie {w} × {h} mm, with the flange {fw} × {fh} mm": "Ciastko {w} × {h} mm, z kołnierzem {fw} × {fh} mm",
+    "{printer}, {lin} of the longer bed side": "{printer}, {lin} dłuższego boku stołu",
+    "Outline only, no imprint": "Sam obrys, bez odcisku",
+    "Outline only: the template has no inner lines": "Sam obrys: szablon nie ma linii wewnętrznych",
+    "Imprint: {ridges} pressing {d} into {t} dough": "Odcisk: {ridges}, głębokość {d} w cieście o grubości {t}",
+    "Imprint: {ridges} ending {d} below the cutting edge": "Odcisk: {ridges}, szczyt {d} poniżej krawędzi tnącej",
+    "{h} tall, cutting edge {b} with a {a}° bevel": "Wysokość {h}, krawędź tnąca {b} ze skosem {a}°",
+    "Automatic fix": "Automatyczna poprawka",
+    "Preview": "Podgląd",
     "Item": "Parametr",
     "Value": "Wartość",
     "Basics": "Podstawowe informacje",
@@ -174,12 +184,8 @@ PL = {
     "a build of this size with other settings exists and was left untouched; this is a new version":
         "istnieje budowa tego rozmiaru z innymi ustawieniami i pozostała nietknięta; to jest nowa wersja",
     "Files": "Pliki",
-    "Location": "Lokalizacja",
     "3D print model": "model do druku 3D",
     "cutter preview": "podgląd foremki",
-    "template used": "użyty szablon",
-    "imprint template used": "użyty szablon odcisku",
-    "project parameters": "parametry projektu",
     "another cutter in this run has the same name; this one is saved as {slug}":
         "inna foremka w tym uruchomieniu ma tę samą nazwę; ta zostaje zapisana jako {slug}",
     # warnings and fixes
