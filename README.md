@@ -1,136 +1,245 @@
-# cookie-forge
+# Cookie Forge
 
-**Turn a picture into a cookie cutter you can 3D print.**
+**Turn a drawing into a 3D-printable cookie cutter. Just ask your coding agent.**
 
-Give your agent a template, choose your printer and cookie size, then approve the preview.
-Cookie Forge creates an STL with a sharp cutting edge, a sturdy grip and an optional imprint.
-No CAD experience needed.
+A skill for Claude Code, Codex and other agents that run `SKILL.md` skills.
+Attach a picture, approve the preview, print the STL. No CAD needed.
 
-![A reindeer template beside an animated view of its actual 100 mm cookie cutter STL](examples/showcase.gif)
+![A black-and-white reindeer drawing beside an animated 3D view of the real 100 mm cookie cutter STL generated from it](examples/showcase.gif)
 
-[Install](#installation) · [Make your first cutter](#make-your-first-cutter) · [Try the demo](#try-it-without-an-agent) · [Example files](#examples)
+**[Make your first cutter →](#quick-start)**
 
-[Still image of the animation](examples/showcase.png) · [Download the featured STL](examples/reindeer/100mm/cutter.stl)
+[Real examples](#real-results) · [CLI demo](#try-it-without-an-agent) · [Sample STL](examples/reindeer/100mm/cutter.stl) · [Still image](examples/showcase.png)
 
-## Installation
+## Real results
 
-You need **Git**, **Python 3.10+**, [uv](https://docs.astral.sh/uv/getting-started/installation/),
-and an agent that supports `SKILL.md` files and shell execution. The first run downloads the
-geometry and image libraries (potentially hundreds of MB); allow network access and a writable
-uv cache. Later runs reuse them.
+Each render below shows an actual STL from [`examples/`](examples/), as it sits on the print bed.
+One template can produce two cutters:
 
-Install uv if needed:
+![Easter bunny line drawing, its outline-only cutter STL, and its STL with lower ridges that imprint the ears, face and egg pattern](examples/gallery-easter-bunny.png)
 
-```bash
-# macOS / Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
+**Easter bunny, 100 mm:** [template](examples/easter-bunny/100mm/source.png) · [outline STL](examples/easter-bunny/100mm/cutter.stl) · [imprint STL](examples/easter-bunny-imprint/100mm/cutter.stl)
 
-```powershell
-# Windows PowerShell
-winget install --id=astral-sh.uv -e
-```
+![Birthday cake line drawing, its outline-only cutter STL, and its STL with lower ridges that imprint the candles, icing drips and cake layers](examples/gallery-birthday-cake.png)
 
-Choose **one** installation below. These are personal installations available across your local
-projects. The Windows commands are a setup starting point; see [compatibility](#compatibility).
+**Birthday cake, 100 mm:** [template](examples/birthday-cake/100mm/source.png) · [outline STL](examples/birthday-cake/100mm/cutter.stl) · [imprint STL](examples/birthday-cake-imprint/100mm/cutter.stl)
 
-<details open>
-<summary><strong>Claude Code</strong></summary>
+**Outline only** leaves the cookie smooth for icing. **With imprint**, the drawing's inner lines
+become lower ridges that press the pattern into the dough instead of cutting through it.
 
-macOS / Linux:
+<details>
+<summary>All five examples with technical previews, settings and print notes</summary>
 
-```bash
-mkdir -p "$HOME/.claude/skills"
-git clone https://github.com/DEVividious/cookie-forge.git "$HOME/.claude/skills/cookie-forge"
-uv run "$HOME/.claude/skills/cookie-forge/scripts/cookie_forge.py" --help
-```
+<br>
 
-Windows PowerShell:
+All five cutters were made by running the whole skill (100 mm, Creality K1C). Each directory
+holds one finished cutter: `cutter.stl`, `preview.png`, `source.png` (the template used),
+`project.json` and `notes.md`. When you use the skill, files go to a workspace with separate
+exports, builds, previews and templates; see [where your files go](#reference).
 
-```powershell
-New-Item -ItemType Directory -Force "$HOME/.claude/skills" | Out-Null
-git clone https://github.com/DEVividious/cookie-forge.git "$HOME/.claude/skills/cookie-forge"
-uv run "$HOME/.claude/skills/cookie-forge/scripts/cookie_forge.py" --help
-```
+| Template | Preview: top view, wall cross-section, 3D model | Files |
+|---|---|---|
+| <img alt="Reindeer template" src="examples/reindeer/100mm/source.png" width="160"> | <img alt="Reindeer cutter preview" src="examples/reindeer/100mm/preview.png" width="480"> | [reindeer](examples/reindeer/100mm/) |
+| <img alt="Birthday cake template" src="examples/birthday-cake/100mm/source.png" width="160"> | <img alt="Birthday cake cutter preview" src="examples/birthday-cake/100mm/preview.png" width="480"> | [birthday cake](examples/birthday-cake/100mm/) |
+| <img alt="Easter bunny template" src="examples/easter-bunny/100mm/source.png" width="160"> | <img alt="Easter bunny cutter preview" src="examples/easter-bunny/100mm/preview.png" width="480"> | [Easter bunny](examples/easter-bunny/100mm/) |
+| <img alt="Birthday cake template prepared for an imprint" src="examples/birthday-cake-imprint/100mm/source.png" width="160"> | <img alt="Birthday cake cutter preview with imprint ridges" src="examples/birthday-cake-imprint/100mm/preview.png" width="480"> | [birthday cake with imprint](examples/birthday-cake-imprint/100mm/) |
+| <img alt="Easter bunny template prepared for an imprint" src="examples/easter-bunny-imprint/100mm/source.png" width="160"> | <img alt="Easter bunny cutter preview with imprint ridges" src="examples/easter-bunny-imprint/100mm/preview.png" width="480"> | [Easter bunny with imprint](examples/easter-bunny-imprint/100mm/) |
+
+The imprint ridges press the pattern about 1.5 mm into the dough (set from the dough thickness,
+`--dough 6` here), with the aim of keeping it visible after baking; the result depends on the
+dough. In these two templates the inner lines touched the outline, so the skill first ran
+`prepare`, which writes a version where they stop 1 mm short of it (otherwise every line would
+be imprinted twice).
+
+The reindeer shows a real warning: a 1.4 mm notch by the ear, where the template's ear line ends
+open. Dough may stick there; `--smooth 0.8` would close it.
 
 </details>
+
+## Why not just model it in CAD?
+
+A working cutter needs more than an extruded outline. Cookie Forge builds and checks the details:
+
+- **Print-ready STL, verified.** 0.45 mm beveled cutting edge, 1.2 mm wall, 5 mm grip flange;
+  every model must pass a watertight check before export.
+- **You approve first.** Size, bed fit, warnings and a 2D preview come before any STL.
+- **Imprint or not.** The agent asks whether inner lines should press into the dough.
+- **Smoother outlines on request.** Compare three simplification levels, or keep the original.
+- **Edits never overwrite.** A new size or outline is built as a new version; earlier STLs stay.
+
+## Quick start
+
+You need **Git**, **Python 3.10+**, [**uv**](https://docs.astral.sh/uv/getting-started/installation/)
+and **Claude Code**. Codex and Windows instructions are under step 1.
+
+No uv yet? `curl -LsSf https://astral.sh/uv/install.sh | sh` installs it on macOS and Linux.
+
+### 1. Install the skill
+
+In your **terminal**:
+
+```bash
+git clone https://github.com/DEVividious/cookie-forge.git "$HOME/.claude/skills/cookie-forge"
+uv run "$HOME/.claude/skills/cookie-forge/scripts/cookie_forge.py" --help
+```
+
+The check lists `analyze`, `build`, `simplify`, `prepare`, `paths` and `printers`. The first run
+downloads the geometry and image libraries (potentially hundreds of MB), so allow network
+access and a writable uv cache; later runs reuse them.
 
 <details>
 <summary><strong>Codex</strong></summary>
 
-macOS / Linux:
+<br>
 
 ```bash
-mkdir -p "$HOME/.agents/skills"
 git clone https://github.com/DEVividious/cookie-forge.git "$HOME/.agents/skills/cookie-forge"
 uv run "$HOME/.agents/skills/cookie-forge/scripts/cookie_forge.py" --help
 ```
 
-Windows PowerShell:
-
-```powershell
-New-Item -ItemType Directory -Force "$HOME/.agents/skills" | Out-Null
-git clone https://github.com/DEVividious/cookie-forge.git "$HOME/.agents/skills/cookie-forge"
-uv run "$HOME/.agents/skills/cookie-forge/scripts/cookie_forge.py" --help
-```
+In the next steps, use `.agents` instead of `.claude` in paths, start `codex` instead of
+`claude`, and begin the prompt with `$cookie-forge` instead of `/cookie-forge`.
+Discovery details: [Codex skills](https://learn.chatgpt.com/docs/build-skills).
 
 </details>
 
-The check should list `analyze`, `build`, `simplify`, `prepare`, `paths` and `printers`.
-Restart your agent if it does not discover the new skill.
+<details>
+<summary><strong>Windows PowerShell</strong></summary>
 
-For a project-only installation, use `.claude/skills/cookie-forge` or
-`.agents/skills/cookie-forge` inside that project. Other compatible hosts need the same
-`SKILL.md`, `scripts/` and `references/` together in their own skill directory.
-Discovery details: [Claude Code skills](https://code.claude.com/docs/en/skills) and
-[Codex skills](https://learn.chatgpt.com/docs/build-skills).
+<br>
 
-## Make your first cutter
+Native Windows is **not yet verified end to end**. Treat these commands as a starting point and
+read [Compatibility](#compatibility).
 
-1. Open your agent in a folder where you want to keep your cutters, separate from the skill installation.
-2. Attach a PNG, JPG, WEBP or PDF template. A closed black outline on white works best;
-   inner lines can become an imprint. A filled silhouette works for outline-only cutters.
-3. Send one of these prompts in the **agent chat**, not the terminal:
+```powershell
+# Install uv if needed, then reopen the terminal
+winget install --id=astral-sh.uv -e
 
-   **Claude Code:** `/cookie-forge Make a 100 mm cutter from this image for my Creality K1C. Outline only.`
+# Claude Code
+git clone https://github.com/DEVividious/cookie-forge.git "$HOME/.claude/skills/cookie-forge"
+uv run "$HOME/.claude/skills/cookie-forge/scripts/cookie_forge.py" --help
 
-   **Codex:** `$cookie-forge Make a 100 mm cutter from this image for my Creality K1C. Outline only.`
+# Codex
+git clone https://github.com/DEVividious/cookie-forge.git "$HOME/.agents/skills/cookie-forge"
+uv run "$HOME/.agents/skills/cookie-forge/scripts/cookie_forge.py" --help
+```
 
-   **Po polsku:** „Zrób foremkę z tego obrazka: 100 mm, Creality K1C, sam obrys. Nazwij ją renifer.”
+The commands in step 2 work unchanged in PowerShell.
 
-The agent checks the image, asks for missing choices, shows the dimensions and preview,
-and waits for your approval before creating the STL. Already supplied choices should not
-need repeating. Size means the **longest side of the cookie**, excluding the grip flange.
+</details>
 
-You receive links to the STL and preview, plus saved settings for later edits. Import the STL
-into your slicer with the flange down. To iterate, ask: “Simplify this cutter and show me the
-variants” or “Make the same cutter 80 mm wide on its longest side.” Changed settings create a
-new version. The agent follows your language; script output supports English and Polish.
+<details>
+<summary><strong>Project-only install or another agent</strong></summary>
 
-Only have an idea? Ask the agent to help prepare a template first; see [template prompts](references/templates.md).
+<br>
+
+The commands above are personal installations, available across your local projects. For a
+single project, clone into `.claude/skills/cookie-forge` or `.agents/skills/cookie-forge`
+inside that project. Other compatible hosts need the same `SKILL.md`, `scripts/` and
+`references/` together in their own skill directory. Discovery details:
+[Claude Code skills](https://code.claude.com/docs/en/skills).
+
+</details>
+
+### 2. Add a template and open your agent
+
+Work in a folder of your own, not the skill installation. To start with the bundled reindeer,
+run this in your **terminal**:
+
+```bash
+mkdir my-cutters
+cd my-cutters
+cp "$HOME/.claude/skills/cookie-forge/examples/reindeer/100mm/source.png" reindeer.png
+claude    # or open this folder in the Claude Code app or your IDE
+```
+
+Using your own picture? Put a PNG, JPG, WEBP or PDF there instead, or attach it in the chat.
+A closed black outline on white works best. Only have an idea? See
+[template prompts](references/templates.md#prompts-for-image-models).
+
+### 3. Paste this prompt into the agent chat
+
+In the **Claude Code chat**, not the terminal:
+
+```text
+/cookie-forge Make a 100 mm cutter from reindeer.png for my Creality K1C. Outline only.
+```
+
+- Change the file, size or printer, or leave them out and the agent asks. Size is the
+  **longest side of the cookie**, excluding the grip flange.
+- Any language works: „Zrób foremkę z reindeer.png: 100 mm, Creality K1C, sam obrys.”
+- Don't see `/cookie-forge`? Run `/reload-skills` or restart Claude Code.
+
+### 4. Approve the preview
+
+The agent shows how it read the template and asks only for what is missing: printer, size, and
+whether inner lines become an imprint. Then it shows the planned size, bed fit, checks and a 2D
+preview. **It builds nothing until you approve.**
+
+<details>
+<summary>What the reindeer summary flags</summary>
+
+<br>
+
+An excerpt of the real dry-run summary for the reindeer in step 2:
+
+| Check | Result | Recommended | Status |
+|---|---|---|---|
+| Thinnest cookie feature | ≈ 9.6 mm | ≥ 3.0 mm | OK |
+| Narrowest notch | ≈ 1.4 mm | ≥ 2.0 mm | NARROW |
+| Fits on the bed | 97.9 × 110.0 mm in 200 × 200 mm | 10.0 mm margin, 90° rotation allowed | OK |
+| Height vs printer Z | 18.0 mm of 250 mm | — | OK |
+
+> **Warnings**
+> - the narrowest notch is about 1.4 mm - dough may stick in the cutter (recommended ≥ 2.0 mm)
+
+The full summary also lists the construction, geometry processing and planned files. The 2D
+preview shows the top view and wall cross-section, like the left two panels of
+[this preview](examples/reindeer/100mm/preview.png). Reply with a change ("make it 80 mm",
+"smooth that notch") and the agent repeats the dry run before asking again.
+
+</details>
+
+### 5. Print the STL
+
+After you approve, the agent links `reindeer-100mm-v1.stl` (saved in
+`cookie-forge-output/exports/<date>/`) and a rendered preview. Slice it flange down, without
+supports. To iterate, just ask: *"Make the same cutter 80 mm"* or *"Simplify this outline and
+show me the variants."*
 
 ## Try it without an agent
 
-This self-contained demo uses a template included in the repository. Run it from a scratch
-folder. It works with the same single-line commands in Bash and PowerShell once Git and uv are installed:
+Run the geometry engine directly on the bundled reindeer. From a scratch folder, these commands
+work as-is in Bash and PowerShell once Git and uv are installed:
 
 ```bash
 git clone https://github.com/DEVividious/cookie-forge.git
 cd cookie-forge
-uv run scripts/cookie_forge.py analyze examples/reindeer/100mm/source.png --bed K1C --name reindeer --output-dir demo
 uv run scripts/cookie_forge.py build examples/reindeer/100mm/source.png --size 100 --bed K1C --name reindeer --output-dir demo --dry-run --preview-2d
 ```
 
-Open `demo/projects/reindeer/previews/100mm-v1-dry-run.png` and read the summary. The reindeer
-has a narrow notch near its ear; the warning is expected. If you like the result, build it:
+This prints the summary an agent would ask you to approve and writes the 2D preview to
+`demo/projects/reindeer/previews/100mm-v1-dry-run.png`. The narrow-notch warning is expected.
+Build the STL:
 
 ```bash
 uv run scripts/cookie_forge.py build examples/reindeer/100mm/source.png --size 100 --bed K1C --name reindeer --output-dir demo
 ```
 
-Find the STL in `demo/exports/<build-date>/reindeer-100mm-v1.stl` and the rendered preview at
-`demo/projects/reindeer/previews/100mm-v1-model.png`. Repeat the build to see that identical settings reuse
-the existing model.
+Find it in `demo/exports/<build-date>/reindeer-100mm-v1.stl`, with a rendered preview at
+`demo/projects/reindeer/previews/100mm-v1-model.png`. Repeat the build to see that identical
+settings reuse the existing model.
+
+<details>
+<summary>Continue the demo: size table, outline simplification and a new version</summary>
+
+<br>
+
+See the size variants and the template reading:
+
+```bash
+uv run scripts/cookie_forge.py analyze examples/reindeer/100mm/source.png --bed K1C --name reindeer --output-dir demo
+```
 
 Try a smoother outline without losing the original:
 
@@ -139,8 +248,8 @@ uv run scripts/cookie_forge.py simplify --from demo/projects/reindeer/builds/100
 ```
 
 Open the comparison PNG printed by the command (for example,
-`demo/projects/reindeer/previews/100mm-simplify-001.png`), compare the four variants, then try your preferred
-level (shown here: `medium`):
+`demo/projects/reindeer/previews/100mm-simplify-001.png`), compare the four variants, then try
+your preferred level (shown here: `medium`):
 
 ```bash
 uv run scripts/cookie_forge.py build --from demo/projects/reindeer/builds/100mm-v1 --simplify-level medium --dry-run --preview-2d
@@ -152,48 +261,23 @@ Inspect the new dry-run preview, then build when ready:
 uv run scripts/cookie_forge.py build --from demo/projects/reindeer/builds/100mm-v1 --simplify-level medium
 ```
 
-The result becomes
-`demo/exports/<build-date>/reindeer-100mm-v2.stl`; the original stays available.
-
-## Examples
-
-<details>
-<summary>Browse all five templates, previews and downloadable STL files</summary>
-
-Cutters made by going through the whole skill (100 mm, Creality K1C): three outline only, two
-with an imprint. Each directory holds one finished cutter: `cutter.stl`, `preview.png`,
-`source.png` (the template used), `project.json` and `notes.md` (the skill itself puts the STL in
-a visible workspace with separate builds, previews and templates, see "Output").
-
-| Template | Result | Files |
-|---|---|---|
-| <img alt="Cookie cutter example" src="examples/reindeer/100mm/source.png" width="160"> | <img alt="Cookie cutter example" src="examples/reindeer/100mm/preview.png" width="480"> | [reindeer](examples/reindeer/100mm/) |
-| <img alt="Cookie cutter example" src="examples/birthday-cake/100mm/source.png" width="160"> | <img alt="Cookie cutter example" src="examples/birthday-cake/100mm/preview.png" width="480"> | [birthday cake](examples/birthday-cake/100mm/) |
-| <img alt="Cookie cutter example" src="examples/easter-bunny/100mm/source.png" width="160"> | <img alt="Cookie cutter example" src="examples/easter-bunny/100mm/preview.png" width="480"> | [Easter bunny](examples/easter-bunny/100mm/) |
-| <img alt="Cookie cutter example" src="examples/birthday-cake-imprint/100mm/source.png" width="160"> | <img alt="Cookie cutter example" src="examples/birthday-cake-imprint/100mm/preview.png" width="480"> | [birthday cake with imprint](examples/birthday-cake-imprint/100mm/) |
-| <img alt="Cookie cutter example" src="examples/easter-bunny-imprint/100mm/source.png" width="160"> | <img alt="Cookie cutter example" src="examples/easter-bunny-imprint/100mm/preview.png" width="480"> | [Easter bunny with imprint](examples/easter-bunny-imprint/100mm/) |
-
-With an imprint the inner lines become ridges lower than the cutting edge: they press the
-pattern about 1.5 mm into the dough (set from the dough thickness, `--dough 6` here) instead of
-cutting it, with the aim of keeping the pattern visible after baking; the result depends on the dough.
-In these two templates the inner lines touched the outline, so the skill first ran `prepare`,
-which writes a version where they stop 1 mm short of it (otherwise every line would be imprinted
-twice).
-
-The reindeer shows a real warning: a 1.4 mm notch by the ear, where the template's ear line ends
-open. Dough may stick there; `--smooth 0.8` would close it.
+The result becomes `demo/exports/<build-date>/reindeer-100mm-v2.stl`; the original stays
+available.
 
 </details>
 
-<details>
-<summary>Advanced command-line recipes</summary>
+## Reference
 
-## Using the script directly
+<details>
+<summary><strong>Command-line recipes</strong></summary>
+
+<br>
 
 These optional recipes assume you are in the repository and have supplied your own `cat.png`,
-`sheet.pdf`, `star.png` and `donut.png`. For a runnable first example, use the demo above.
-From another project, use the quoted absolute path to the installed `scripts/cookie_forge.py`
-instead. Output is relative to the current directory, not the script's installation directory.
+`sheet.pdf`, `star.png` and `donut.png`. For a runnable first example, use the
+[demo](#try-it-without-an-agent). From another project, use the quoted absolute path to the
+installed `scripts/cookie_forge.py` instead. Output is relative to the current directory, not
+the script's installation directory.
 
 ```bash
 uv run scripts/cookie_forge.py printers "k1c"                                  # printer bed
@@ -213,7 +297,10 @@ uv run scripts/cookie_forge.py build --help
 
 </details>
 
-## Output
+<details>
+<summary><strong>Where your files go</strong></summary>
+
+<br>
 
 By default, everything lives in **`cookie-forge-output/` in your current project**.
 `--output-dir DIR` replaces that workspace root (for example, `--output-dir demo` writes
@@ -245,30 +332,47 @@ cookie-forge-output/
                 └── …
 ```
 
-Open **`projects/<name>/previews/`** to compare outlines and inspect the model. Reading, preparation and
-simplification previews get a new numbered filename on each run; earlier comparisons stay.
-Model and dry-run previews are named after their build version. Repeating a dry run for the
-same version refreshes that version's dry-run report and preview.
+Open **`projects/<name>/previews/`** to compare outlines and inspect the model. Reading,
+preparation and simplification previews get a new numbered filename on each run; earlier
+comparisons stay. Model and dry-run previews are named after their build version. Repeating a
+dry run for the same version refreshes that version's dry-run report and preview.
 
 Print from **`exports/<build-date>/`**: all cutters built that day are together, named
 `<name>-<size>mm-vN.stl`. These are the **only printable STL files**, not extra copies.
 Each build's `project.json` points to its STL using a relative path. `builds/` keeps sources
-and settings; it does not keep a second STL. Back up or move the **whole workspace**, including previews and templates; `--from`
-infers the output root from the build's new location. The agent also writes `notes.md` there.
-Size is rounded to whole millimeters in directory names; exact dimensions are in the manifest.
+and settings; it does not keep a second STL. Back up or move the **whole workspace**, including
+previews and templates; `--from` infers the output root from the build's new location. The
+agent also writes `notes.md` there. Size is rounded to whole millimeters in directory names;
+exact dimensions are in the manifest.
 
 A dry run writes no STL. Identical settings reuse an existing STL; changed settings create a
 new version. Reusing an identical model keeps its original export date and creates no copy.
 `--overwrite` explicitly rebuilds the same version into today's folder and removes its old
-STL if the date changed; `--new-version` requests a separate version. If a previous STL was deleted, its saved project still reserves that version, and a
-normal rebuild creates a new version. Failed checks leave `cutter-rejected.stl`, never a
-file in `exports/`. `--json` provides structured results with actual paths.
+STL if the date changed; `--new-version` requests a separate version. If a previous STL was
+deleted, its saved project still reserves that version, and a normal rebuild creates a new
+version. Failed checks leave `cutter-rejected.stl`, never a file in `exports/`. `--json`
+provides structured results with actual paths.
+
+</details>
+
+<details>
+<summary><strong>Cutter standard</strong></summary>
+
+<br>
+
+Flange 5 × 2 mm on the bed, wall 1.2 mm, height 18 mm, cutting edge 0.45 mm with a 10° outer
+bevel and a vertical inner side, outline only by default; with `--imprint auto` the template's
+inner lines become an imprint (1.5 mm deep with `--dough`, otherwise 3.5 mm below the cutting
+edge), loose parts joined with bridges, model mirrored (the cookie looks like the template).
+Details and reasoning: [`references/geometry.md`](references/geometry.md).
+
+</details>
 
 ## Troubleshooting
 
 | Symptom | What to do |
 |---|---|
-| Skill does not appear | Check that `SKILL.md`, `scripts/` and `references/` are together in the host's skill folder; restart the agent. Opening this repo alone does not install it. |
+| Skill does not appear | Check that `SKILL.md`, `scripts/` and `references/` are together in the host's skill folder. In Claude Code, run `/reload-skills` or restart; restart other agents. Opening this repo alone does not install it. |
 | `uv` is not found | Install uv and reopen the terminal or agent so it sees the updated PATH. |
 | First run stalls or downloads fail | Allow package downloads through the host's permission flow and use a writable uv cache. Subsequent cached runs need no downloads. |
 | Outline is wrong | Use a clean black outline on white; inspect the reading before building. See [template tips](references/templates.md). |
@@ -289,29 +393,23 @@ auto-generated build commands currently use POSIX quoting; ask the agent to adap
 PowerShell while preserving all arguments. Native Windows still needs automated tests for
 installation, generation and workspaces with spaces or non-ASCII paths.
 
-## Maintaining the showcase
-
-Run `uv run scripts/render_showcase.py` to regenerate the README GIF and still image from
-`examples/reindeer/100mm/cutter.stl`. This renders the actual mesh without altering the model.
-
-## Tests
+## Development
 
 ```bash
 python3 -m unittest discover tests
 ```
 
 The tests run the script with `uv run` on the simple templates in `tests/fixtures/` (drawn by
-`make_fixtures.py`); a full run takes about 1–2 minutes, depending on the machine and cached dependencies.
+`make_fixtures.py`); a full run takes about 1–2 minutes, depending on the machine and cached
+dependencies.
 
-## Cutter standard
+Run `uv run scripts/render_showcase.py` to regenerate the README animation, its still image and
+the gallery from the example STL files. It renders the actual meshes without altering them.
 
-Flange 5 × 2 mm on the bed, wall 1.2 mm, height 18 mm, cutting edge 0.45 mm with a 10° outer
-bevel and a vertical inner side, outline only by default; with `--imprint auto` the template's
-inner lines become an imprint (1.5 mm deep with `--dough`, otherwise 3.5 mm below the cutting edge), loose parts joined with bridges, model
-mirrored (the cookie looks like the template).
-Details and reasoning: `references/geometry.md`.
+<details>
+<summary><strong>Repository layout</strong></summary>
 
-## Repository layout
+<br>
 
 - `SKILL.md`: the model- and host-independent conversation flow.
 - `scripts/cookie_forge.py`: the command-line entry point (`--help` lists everything); the code is
@@ -329,12 +427,16 @@ Details and reasoning: `references/geometry.md`.
 
   User-facing text goes through `i18n.t()` / `Msg`; add the Polish version to `locale_pl.py`
   (the tests fail on a missing one). Library code raises `ForgeError` and never exits.
+- `scripts/render_showcase.py`: renders the README animation and gallery from the example STLs.
 - `references/geometry.md`, `references/templates.md`, `references/printers.md`: profile
   standard, template tips and image-model prompts, printer bed table.
-- `examples/`: results of the whole skill for three templates (see "Examples").
+- `examples/`: results of the whole skill, five cutters from three templates (see
+  [Real results](#real-results)), plus the README showcase and gallery images.
 - `tests/`: end-to-end tests of the summary, output layout, versions and manifest;
   `tests/fixtures/` holds their templates.
 - `CHANGELOG.md`: changes of behaviour between versions.
 - `.gitignore`: a whitelist; only the entries above are tracked, so cutters you make while
-  developing (`cookie-forge-output/`, legacy `generated/` and `.work/`, templates, STL files) never end up in the repository. Add a new
-  top-level file or directory to it on purpose.
+  developing (`cookie-forge-output/`, legacy `generated/` and `.work/`, templates, STL files)
+  never end up in the repository. Add a new top-level file or directory to it on purpose.
+
+</details>

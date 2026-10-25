@@ -9,6 +9,8 @@
 - Improve installation instructions, first-use prompts and the bundled demo for Claude Code
   and Codex; document PowerShell setup and the limits of native Windows verification.
 - Add an animated reindeer showcase, a still-image alternative and a reproducible renderer.
+- Redesign the README around a gallery of real outline-only and imprint STLs and a five-step
+  quick start; `render_showcase.py` also renders the gallery images.
 
 
 - Made the skill model-agnostic, with host-specific installation and invocation examples in
