@@ -1,0 +1,146 @@
+{
+  "schema": "cookie-forge/project",
+  "schema_version": 1,
+  "generator": {
+    "name": "cookie-forge",
+    "version": "1.1.0"
+  },
+  "id": "easter-bunny",
+  "name": "Easter bunny",
+  "stage": "built",
+  "updated": "2026-10-25T16:32:50+0100",
+  "fingerprint": "a4125837ab843ffc",
+  "sources": [
+    {
+      "role": "source",
+      "file": "source.png",
+      "original": "examples/easter-bunny/.work/source-original.png",
+      "sha256": "995283713e12548e59b80649b93c9bc66d8ecd06d0a9d06c9ce6acc869c0573c",
+      "page": null
+    }
+  ],
+  "options": {
+    "size": 100.0,
+    "mode": "auto",
+    "split": false,
+    "scale": "shared",
+    "threshold": "auto",
+    "invert": false,
+    "dpi": 200,
+    "holes": "imprint",
+    "imprint": "none",
+    "imprint_seams": false,
+    "rotate": 0.0,
+    "mirror": true,
+    "bridges": true,
+    "dough": null
+  },
+  "parameters": {
+    "height": 18.0,
+    "wall": 1.2,
+    "blade": 0.45,
+    "blade_angle": 10.0,
+    "flange": 5.0,
+    "flange_thickness": 2.0,
+    "imprint_width": 1.0,
+    "imprint_tip": 0.6,
+    "imprint_drop": 3.5,
+    "bridge_width": 4.0,
+    "smooth": 0.3,
+    "simplify": 0.08,
+    "step": 0.2,
+    "margin": 10.0
+  },
+  "printer": {
+    "name": "Creality K1C",
+    "bed_mm": [
+      220,
+      220,
+      250
+    ],
+    "margin_mm": 10.0
+  },
+  "result": {
+    "cookie_mm": [
+      73.511,
+      100.0
+    ],
+    "footprint_mm": [
+      83.506,
+      109.996
+    ],
+    "bed_share_pct": {
+      "longer_side": 50.0,
+      "area": 19.0
+    },
+    "bevel_height_mm": 4.253,
+    "smoothing": {
+      "radius_mm": 0.3,
+      "simplify_mm": 0.08,
+      "rescale": 1.0,
+      "template_px_mm": 0.08055,
+      "threshold": {
+        "mode": "auto",
+        "value": 131.0
+      }
+    },
+    "imprint": {
+      "ridges": 0,
+      "holes_cut": 0,
+      "holes_imprint": 9,
+      "depth_mm": null
+    },
+    "bridges": {
+      "count": 0
+    },
+    "checks": {
+      "thinnest_mm": 21.96,
+      "narrowest_mm": 2.67,
+      "fits_bed": true,
+      "fits_height": true,
+      "outlines": 1,
+      "through_holes": 0
+    }
+  },
+  "warnings": [],
+  "fixes": [],
+  "files": [
+    {
+      "path": "cutter.stl",
+      "role": "stl",
+      "status": "created"
+    },
+    {
+      "path": "preview.png",
+      "role": "preview",
+      "status": "created"
+    },
+    {
+      "path": "source.png",
+      "role": "source",
+      "status": "created"
+    },
+    {
+      "path": "project.json",
+      "role": "manifest",
+      "status": "created"
+    }
+  ],
+  "stl_check": {
+    "triangles": 46732,
+    "watertight": true,
+    "winding_consistent": true,
+    "volume_cm3": 10.358533479971983,
+    "pla_mass_g": 12.84458151516526,
+    "extents": [
+      83.50558853149414,
+      109.99602127075195,
+      18.0
+    ],
+    "bodies": 1,
+    "ok": true,
+    "seconds": 1.8
+  },
+  "matches_dry_run": true,
+  "stl_sha256": "d87ce0fc29dc93a4cfd374b483dfceb5478c654044fa7e8bc57fa2c0fde0eb2b"
+}

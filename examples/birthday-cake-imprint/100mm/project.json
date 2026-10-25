@@ -1,0 +1,148 @@
+{
+  "schema": "cookie-forge/project",
+  "schema_version": 1,
+  "generator": {
+    "name": "cookie-forge",
+    "version": "1.1.0"
+  },
+  "id": "birthday-cake-imprint",
+  "name": "Birthday cake (imprint)",
+  "stage": "built",
+  "updated": "2026-10-25T15:56:31+0100",
+  "fingerprint": "abb1f04003490111",
+  "sources": [
+    {
+      "role": "source",
+      "file": "source.png",
+      "original": "examples/birthday-cake-imprint/.work/source-v1.png",
+      "sha256": "050dddd81145193d1d3d0228035ef121ed56d0acb87647c130214af4061bbf46",
+      "page": null
+    }
+  ],
+  "options": {
+    "size": 100.0,
+    "mode": "auto",
+    "split": false,
+    "scale": "shared",
+    "threshold": "auto",
+    "invert": false,
+    "dpi": 200,
+    "holes": "imprint",
+    "imprint": "auto",
+    "imprint_seams": false,
+    "rotate": 0.0,
+    "mirror": true,
+    "bridges": true,
+    "dough": 6.0
+  },
+  "parameters": {
+    "height": 18.0,
+    "wall": 1.2,
+    "blade": 0.45,
+    "blade_angle": 10.0,
+    "flange": 5.0,
+    "flange_thickness": 2.0,
+    "imprint_width": 1.0,
+    "imprint_tip": 0.6,
+    "imprint_drop": 4.5,
+    "bridge_width": 4.0,
+    "smooth": 0.3,
+    "simplify": 0.08,
+    "step": 0.2,
+    "margin": 10.0
+  },
+  "printer": {
+    "name": "Creality K1C",
+    "bed_mm": [
+      220,
+      220,
+      250
+    ],
+    "margin_mm": 10.0
+  },
+  "result": {
+    "cookie_mm": [
+      97.387,
+      100.0
+    ],
+    "footprint_mm": [
+      107.387,
+      109.997
+    ],
+    "bed_share_pct": {
+      "longer_side": 50.0,
+      "area": 24.4
+    },
+    "bevel_height_mm": 4.253,
+    "smoothing": {
+      "radius_mm": 0.3,
+      "simplify_mm": 0.08,
+      "rescale": 1.0,
+      "template_px_mm": 0.08506,
+      "threshold": {
+        "mode": "auto",
+        "value": 129.0
+      }
+    },
+    "imprint": {
+      "ridges": 12,
+      "holes_cut": 0,
+      "holes_imprint": 0,
+      "depth_mm": 1.5
+    },
+    "bridges": {
+      "count": 14
+    },
+    "checks": {
+      "thinnest_mm": 16.13,
+      "narrowest_mm": 2.64,
+      "fits_bed": true,
+      "fits_height": true,
+      "outlines": 1,
+      "through_holes": 0
+    }
+  },
+  "warnings": [],
+  "fixes": [
+    "added 14 bridges joining loose parts (imprint/holes) to the flange"
+  ],
+  "files": [
+    {
+      "path": "cutter.stl",
+      "role": "stl",
+      "status": "created"
+    },
+    {
+      "path": "preview.png",
+      "role": "preview",
+      "status": "created"
+    },
+    {
+      "path": "source.png",
+      "role": "source",
+      "status": "created"
+    },
+    {
+      "path": "project.json",
+      "role": "manifest",
+      "status": "created"
+    }
+  ],
+  "stl_check": {
+    "triangles": 94986,
+    "watertight": true,
+    "winding_consistent": true,
+    "volume_cm3": 24.453982250196884,
+    "pla_mass_g": 30.322937990244135,
+    "extents": [
+      107.38663864135742,
+      109.99710845947266,
+      18.0
+    ],
+    "bodies": 1,
+    "ok": true,
+    "seconds": 3.7
+  },
+  "matches_dry_run": true,
+  "stl_sha256": "dbf1cdbae8f3ce78b5534dae308b9735da8b3273c30e78c9a47ec07c5be4c8b7"
+}

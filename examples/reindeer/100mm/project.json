@@ -1,0 +1,150 @@
+{
+  "schema": "cookie-forge/project",
+  "schema_version": 1,
+  "generator": {
+    "name": "cookie-forge",
+    "version": "1.1.0"
+  },
+  "id": "reindeer",
+  "name": "Reindeer",
+  "stage": "built",
+  "updated": "2026-10-25T16:32:35+0100",
+  "fingerprint": "869a1bbbff11fae9",
+  "sources": [
+    {
+      "role": "source",
+      "file": "source.png",
+      "original": "examples/reindeer/.work/source-original.png",
+      "sha256": "19a1e13ff05b6f3c96206bf3237eaa62942a0e3982f856ada0d9d1e8c128734f",
+      "page": null
+    }
+  ],
+  "options": {
+    "size": 100.0,
+    "mode": "auto",
+    "split": false,
+    "scale": "shared",
+    "threshold": "auto",
+    "invert": false,
+    "dpi": 200,
+    "holes": "imprint",
+    "imprint": "none",
+    "imprint_seams": false,
+    "rotate": 0.0,
+    "mirror": true,
+    "bridges": true,
+    "dough": null
+  },
+  "parameters": {
+    "height": 18.0,
+    "wall": 1.2,
+    "blade": 0.45,
+    "blade_angle": 10.0,
+    "flange": 5.0,
+    "flange_thickness": 2.0,
+    "imprint_width": 1.0,
+    "imprint_tip": 0.6,
+    "imprint_drop": 3.5,
+    "bridge_width": 4.0,
+    "smooth": 0.3,
+    "simplify": 0.08,
+    "step": 0.2,
+    "margin": 10.0
+  },
+  "printer": {
+    "name": "Creality K1C",
+    "bed_mm": [
+      220,
+      220,
+      250
+    ],
+    "margin_mm": 10.0
+  },
+  "result": {
+    "cookie_mm": [
+      87.93,
+      100.0
+    ],
+    "footprint_mm": [
+      97.926,
+      109.993
+    ],
+    "bed_share_pct": {
+      "longer_side": 50.0,
+      "area": 22.3
+    },
+    "bevel_height_mm": 4.253,
+    "smoothing": {
+      "radius_mm": 0.3002,
+      "simplify_mm": 0.08,
+      "rescale": 1.000543,
+      "template_px_mm": 0.08158,
+      "threshold": {
+        "mode": "auto",
+        "value": 131.0
+      }
+    },
+    "imprint": {
+      "ridges": 0,
+      "holes_cut": 0,
+      "holes_imprint": 1,
+      "depth_mm": null
+    },
+    "bridges": {
+      "count": 0
+    },
+    "checks": {
+      "thinnest_mm": 9.62,
+      "narrowest_mm": 1.41,
+      "fits_bed": true,
+      "fits_height": true,
+      "outlines": 1,
+      "through_holes": 0
+    }
+  },
+  "warnings": [
+    "the narrowest notch is about 1.4 mm - dough may stick in the cutter (recommended ≥ 2.0 mm)"
+  ],
+  "fixes": [
+    "after smoothing, scaled by × 1.0005 so the longest side is exactly 100.0 mm"
+  ],
+  "files": [
+    {
+      "path": "cutter.stl",
+      "role": "stl",
+      "status": "created"
+    },
+    {
+      "path": "preview.png",
+      "role": "preview",
+      "status": "created"
+    },
+    {
+      "path": "source.png",
+      "role": "source",
+      "status": "created"
+    },
+    {
+      "path": "project.json",
+      "role": "manifest",
+      "status": "created"
+    }
+  ],
+  "stl_check": {
+    "triangles": 73216,
+    "watertight": true,
+    "winding_consistent": true,
+    "volume_cm3": 12.720130265792807,
+    "pla_mass_g": 15.772961529583082,
+    "extents": [
+      97.92567443847656,
+      109.99319458007812,
+      18.0
+    ],
+    "bodies": 1,
+    "ok": true,
+    "seconds": 2.5
+  },
+  "matches_dry_run": true,
+  "stl_sha256": "e4b9a1d68126509b5fcc49a190e15acec73b014738cd29a7bbb062db9848e687"
+}

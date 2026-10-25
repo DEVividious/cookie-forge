@@ -1,0 +1,37 @@
+# Only the generic skill belongs in this repository. Everything at the top level is ignored
+# except the files and directories listed below; add a new top-level entry here on purpose.
+/*
+!/.gitignore
+!/SKILL.md
+!/README.md
+!/CHANGELOG.md
+!/LICENSE
+!/scripts/
+!/references/
+!/examples/
+!/tests/
+!/.github/
+
+# Generated anywhere: results, helper files, caches
+output/
+.work/
+*.stl
+!/examples/**/*.stl
+*.3mf
+*.gcode
+*.tmp
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Local settings, editors, OS
+.env
+.claude/settings.local.json
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
