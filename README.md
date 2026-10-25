@@ -435,8 +435,13 @@ the gallery from the example STL files. It renders the actual meshes without alt
 - `tests/`: end-to-end tests of the summary, output layout, versions and manifest;
   `tests/fixtures/` holds their templates.
 - `CHANGELOG.md`: changes of behaviour between versions.
+- `LICENSE`: the MIT license.
 - `.gitignore`: a whitelist; only the entries above are tracked, so cutters you make while
   developing (`cookie-forge-output/`, legacy `generated/` and `.work/`, templates, STL files)
   never end up in the repository. Add a new top-level file or directory to it on purpose.
 
 </details>
+
+## License
+
+[MIT](LICENSE)
