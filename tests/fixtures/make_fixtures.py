@@ -1,4 +1,4 @@
-"""Draws the test templates in this directory: star, gingerbread, donut, sheet, badge."""
+"""Draws the test templates in this directory: star, gingerbread, donut, sheet, badge, grid."""
 from PIL import Image, ImageDraw, ImageFilter
 import math, os, numpy as np
 
@@ -50,5 +50,13 @@ d.ellipse((100,100,900,900), outline=0, width=24)
 d.line((110,500,890,500), fill=0, width=16)
 d.ellipse((470,280,530,340), fill=0)
 im.save(out("badge.png"))
+
+# grid: 2 x 2 squares of 20 mm, 0.85 mm apart (shared walls), 20 px/mm; any simplification merges them
+im = Image.new("L",(1017,1017),255); d=ImageDraw.Draw(im)
+for r in range(2):
+    for c in range(2):
+        x0, y0 = 5 + c*20.85, 5 + r*20.85
+        d.rectangle([round(x0*20), round(y0*20), round((x0+20)*20)-1, round((y0+20)*20)-1], fill=0)
+im.save(out("grid.png"), dpi=(508, 508))
 
 print("ok")

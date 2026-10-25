@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 
-from ..config import GAP_SEARCH_MAX, THIN_SEARCH_MAX
+from ..config import GAP_SEARCH_MAX, SIMPLIFY_LEVELS, THIN_SEARCH_MAX
 
 
 def smooth_body(body, r, tol):
@@ -31,6 +31,44 @@ def smooth_body(body, r, tol):
         new.append(Polygon(p.exterior, holes))
     g = unary_union(new) if new else body
     return g
+
+
+def level_radii(level, size):
+    """(contour averaging sigma, rounding radius) in mm of a simplification level for a cookie of `size` mm."""
+    fs, fr = SIMPLIFY_LEVELS[level]
+    return fs * size, fr * size
+
+
+def outline_body(body, p, size):
+    """The cookie outline after smoothing and, with --simplify-level, simplification: small wiggles
+    averaged out along the outline, then narrow notches and tips rounded (at least p["smooth"])."""
+    level = p.get("simplify_level", "none")
+    if level == "none":
+        return smooth_body(body, p["smooth"], p["simplify"])
+    sigma, r = level_radii(level, size)
+    return smooth_body(average_outline(body, sigma), max(p["smooth"], r), p["simplify"])
+
+
+def average_outline(g, sigma, step=0.1):
+    """Every ring of g resampled every `step` mm and averaged with a Gaussian of `sigma` mm along the
+    ring (wrapping around), which evens out wiggles shorter than about sigma but keeps the shape."""
+    from shapely.geometry import LinearRing, MultiPolygon, Polygon
+
+    def ring(coords):
+        lr = LinearRing(coords)
+        n = max(64, int(lr.length / step))
+        pts = np.array([lr.interpolate(d).coords[0] for d in np.linspace(0, lr.length, n, endpoint=False)])
+        s = sigma / (lr.length / n)
+        half = min(int(4 * s) + 1, n - 1)
+        kernel = np.exp(-0.5 * (np.arange(-half, half + 1) / s) ** 2)
+        kernel /= kernel.sum()
+        return np.c_[[np.convolve(np.r_[c[-half:], c, c[:half]], kernel, mode="valid") for c in pts.T]].T
+
+    polys = []
+    for p in getattr(g, "geoms", [g]):
+        q = Polygon(ring(p.exterior.coords), [ring(r.coords) for r in p.interiors]).buffer(0)
+        polys += list(getattr(q, "geoms", [q]))
+    return MultiPolygon(polys) if len(polys) > 1 else polys[0]
 
 
 def imprint_ridges(k, p):

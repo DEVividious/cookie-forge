@@ -130,6 +130,33 @@ PL = {
     "exists (identical build)": "istnieje (identyczna budowa)",
     "created by this dry run": "utworzony przez tę próbę na sucho",
     "Build command": "Polecenie budowy",
+    "Outline simplification level": "Poziom uproszczenia konturu",
+    "{level}: wiggles averaged over {sigma}, notches and tips rounded to {r} (--simplify-level {key})":
+        "{level}: falki uśrednione na odcinku {sigma}, wcięcia i szpice zaokrąglone do {r} (--simplify-level {key})",
+    "off (--simplify-level none)": "wyłączone (--simplify-level none)",
+    # simplify
+    "no simplification": "bez uproszczenia",
+    "light": "lekkie",
+    "medium": "średnie",
+    "strong": "mocne",
+    "## Outline simplification: {name}": "## Uproszczenie konturu: {name}",
+    "Outline": "Kontur",
+    "narrowest notch {gap} (recommended ≥ {m}), the medium level shortens the outline by {s}":
+        "najwęższe wcięcie {gap} (zalecane ≥ {m}), średnie uproszczenie skraca obrys o {s}",
+    "no level keeps the separate outlines and holes: simplification is not possible, don't offer it":
+        "żaden poziom nie zachowuje osobnych konturów i otworów: uproszczenie niemożliwe, nie proponuj go",
+    "complex ({facts}): offer simplification": "skomplikowany ({facts}): zaproponuj uproszczenie",
+    "simple ({facts}): no need to offer simplification": "prosty ({facts}): nie trzeba proponować uproszczenia",
+    "Mean deviation from the template": "Średnia odchyłka od szablonu",
+    "Max deviation": "Maks. odchyłka",
+    "Triangles": "Trójkąty",
+    "current settings": "obecne ustawienia",
+    "rejected: it would merge or split outlines or close a hole": "odrzucony: zlałby lub rozdzielił kontury albo zamknął otwór",
+    "Variants preview: {path}": "Podgląd wariantów: {path}",
+    "deviation: mean {mean}, max {max}": "odchyłka: średnio {mean}, maks. {max}",
+    "narrowest notch {gap} · {tri} triangles": "najwęższe wcięcie {gap} · trójkąty: {tri}",
+    "{name}: outline simplification - red = cutting edge, grey = template outline":
+        "{name}: uproszczenie konturu - czerwony = krawędź tnąca, szary = obrys szablonu",
     # build report
     "## Cutter {name}: ready": "## Foremka {name}: gotowa",
     "## Cutter {name}: PROBLEM": "## Foremka {name}: PROBLEM",

@@ -22,6 +22,7 @@ DRY_RUN_FILE = "dry-run.json"
 DRY_RUN_PREVIEW_FILE = "dry-run-preview.png"
 READING_FILE = "reading.png"
 PREPARE_FILE = "prepare.png"
+SIMPLIFY_FILE = "simplify.png"
 RESERVED_NAMES = {"con", "prn", "aux", "nul"} | {f"{d}{i}" for d in ("com", "lpt") for i in range(1, 10)}
 
 

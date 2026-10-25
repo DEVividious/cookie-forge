@@ -3,9 +3,10 @@ import math
 from dataclasses import dataclass, field
 
 from ..config import GAP_MIN, THIN_CRITICAL, THIN_MIN
+from ..errors import fail
 from ..i18n import Msg, count, num, val
 from ..template.shapes import Shape, longest_side, outline_counts, transform
-from .outline import bridges, imprint_ridges, narrowest_gap, smooth_body, thinnest_feature
+from .outline import bridges, imprint_ridges, level_radii, narrowest_gap, outline_body, smooth_body, thinnest_feature
 
 
 @dataclass
@@ -25,6 +26,7 @@ class Design:
     fits: bool                     # footprint fits on the bed with the margin (True without a bed)
     fits_height: bool
     rescale: float = 1.0           # scale applied after smoothing to hit the requested size
+    simplified: tuple | None = None  # (level, sigma mm, rounding radius mm) with --simplify-level
     size_note: str = ""
     index: int = 1
     total: int = 1
@@ -41,7 +43,16 @@ class Design:
 def design(k, p, bed, mirror=True, target=None):
     from shapely.ops import unary_union
     before = outline_counts(k.body)
-    k = Shape(k.name, smooth_body(k.body, p["smooth"], p["simplify"]), k.imprints, k.source,
+    size = longest_side(k.body)
+    level = p.get("simplify_level", "none")
+    simplified = None
+    if level != "none":
+        # a level must never merge or split outlines (shared walls of a grid) or close a hole
+        if outline_counts(outline_body(k.body, p, size)) != outline_counts(smooth_body(k.body, p["smooth"], p["simplify"])):
+            fail(f"--simplify-level {level} would change the number of separate outlines or holes of "
+                 f"{k.name}; use a lighter level or none")
+        simplified = (level, *level_radii(level, size))
+    k = Shape(k.name, outline_body(k.body, p, size), k.imprints, k.source,
               k.mm_per_px, list(k.fixes), k.holes_cut, k.holes_imprint, k.px_size, k.threshold, k.origin)
     fixes = list(k.fixes)
     after = outline_counts(k.body)
@@ -98,7 +109,7 @@ def design(k, p, bed, mirror=True, target=None):
         fixes.append(Msg("added {bridges} joining loose parts (imprint/holes) to the flange",
                          bridges=lambda: count(len(beams), "bridge")))
     return Design(k, p, ridges, beams, footprint, cookie_dims, footprint_dims, bed, warn, fixes,
-                  thin, gap, fits, fits_height, rescale)
+                  thin, gap, fits, fits_height, rescale, simplified)
 
 
 def bed_share(pr):

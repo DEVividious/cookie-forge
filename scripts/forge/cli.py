@@ -1,18 +1,22 @@
 """Cookie cutter generator: image (PNG/JPG/PDF) -> STL (dimensions in mm).
 
 Usage:
-  uv run cookie_forge.py analyze SOURCES... [--bed 220x220] [--split] [--preview file.png]
-  uv run cookie_forge.py build   SOURCES... --size 80 [--bed 220x220] [--name cat] [--dry-run] ...
+  uv run cookie_forge.py analyze  SOURCES... [--bed 220x220] [--split] [--preview file.png]
+  uv run cookie_forge.py build    SOURCES... --size 80 [--bed 220x220] [--name cat] [--dry-run] ...
+  uv run cookie_forge.py simplify SOURCES... --size 80 --name cat   (outline simplification variants)
+  uv run cookie_forge.py build --from .work/cat/80mm --simplify-level medium   (change an existing project)
   uv run cookie_forge.py printers [phrase]
   uv run cookie_forge.py prepare SOURCE --name cat [--size 80] [--gap 1.0]
   uv run cookie_forge.py paths --name cat
 Output language: --lang en (default) or --lang pl.
 
-Results go to OUTPUT/<cutter>/<size>mm/ (OUTPUT = --output-dir, default ./output, relative to the
-current directory, i.e. the user's project): cutter.stl, preview.png, source.<ext>, project.json,
-plus helper files in .work/. A dry run writes only .work/ files. An existing build is never
-replaced silently: identical settings -> nothing is rebuilt, different settings -> a new version
-directory <size>mm-v2, --overwrite / --new-version on explicit request.
+Results go below ROOT (--output-dir, default: the current directory, i.e. the user's project):
+generated/<date>/<cutter>-<size>mm.stl for every STL that passed the check, and .work/<cutter>/
+for the working files (template versions, reading preview, <size>mm/ with preview.png,
+source.<ext>, project.json and the dry-run files). A dry run writes only the dry-run files. An
+existing build is never replaced silently: identical settings -> nothing is rebuilt, different
+settings -> a new version <size>mm-v2 (<cutter>-<size>mm-v2.stl), --overwrite / --new-version on
+explicit request.
 
 A SOURCE is a PNG/JPG/BMP/WEBP/PDF file. Black (dark) pixels are the shape, white is background.
 In "merge" mode a source may carry a placement: file.png@dx,dy[,size_mm[,rotation_deg]].
@@ -22,9 +26,9 @@ Cutter profile (the flange lies on the print bed, the cutting edge is on top; fl
   z = .. HEIGHT - BEVEL_HEIGHT   wall WALL thick
   z = .. HEIGHT                  taper to BLADE at BLADE_ANGLE (outer bevel, vertical inside,
                                  so the sides of the cookie are straight)
-Lines inside the template become the imprint: a ridge IMPRINT_DROP lower than the cutting edge
-that only presses the pattern into the dough. Every loose part (imprint, hole wall, separate
-shape) is joined by bridges at flange level, so the print is a single solid."""
+With --imprint auto the lines inside the template become the imprint: a ridge IMPRINT_DROP lower
+than the cutting edge that only presses the pattern into the dough. Every loose part (imprint,
+hole wall, separate shape) is joined by bridges at flange level, so the print is a single solid."""
 import argparse
 import sys
 
@@ -34,12 +38,23 @@ from .commands.build import cmd_build
 from .commands.paths import cmd_paths
 from .commands.prepare import cmd_prepare
 from .commands.printers import cmd_printers
+from .commands.simplify import cmd_simplify
 from .config import DEFAULTS, IMPRINT_DEPTH
 from .errors import ForgeError, fail
+from .project.reuse import expand_from
 
 
 def main():
-    args = build_parser().parse_args()
+    try:
+        argv = sys.argv[1:]
+        if "--from" in argv and argv and argv[0] in ("analyze", "build", "simplify"):
+            # the expanded arguments are what this run does, so the build command shows them all
+            argv = expand_from(argv, build_parser())
+            sys.argv[1:] = argv
+    except ForgeError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(1)
+    args = build_parser().parse_args(argv)
     i18n.set_language(args.lang)
     try:
         check_args(args)
@@ -54,7 +69,7 @@ def build_parser():
     sub = ap.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("analyze", help="read the template(s) and propose sizes")
     add_source_options(a)
-    a.add_argument("--preview", help="PNG with the shape as read; default OUTPUT/<name>/.work/reading.png")
+    a.add_argument("--preview", help="PNG with the shape as read; default .work/<name>/reading.png")
     a.set_defaults(fn=cmd_analyze)
 
     b = sub.add_parser("build", help="build the STL (or only the summary with --dry-run)")
@@ -66,6 +81,10 @@ def build_parser():
     b.add_argument("--new-version", action="store_true", help="always write a new version directory (<size>mm-vN)")
     b.add_argument("--json", action="store_true", help="print a machine-readable result (with the summary/report text)")
     b.set_defaults(fn=cmd_build)
+
+    sm = sub.add_parser("simplify", help="outline simplification variants side by side, and whether the outline is complex")
+    add_source_options(sm)
+    sm.set_defaults(fn=cmd_simplify)
 
     pr = sub.add_parser("prepare", help="new template version with inner lines detached from the outline (for an imprint)")
     pr.add_argument("source", metavar="SOURCE", help="PNG/JPG/one-page PDF")
@@ -125,6 +144,12 @@ def add_source_options(s):
     s.add_argument("--rotate", type=float, default=0.0, help="rotate the shape, in degrees")
     s.add_argument("--no-mirror", action="store_true", help="do not mirror the model (the cookie comes out mirrored)")
     s.add_argument("--no-bridges", action="store_true")
+    s.add_argument("--simplify-level", choices=["none", "light", "medium", "strong"], default="none",
+                   help="simplify the outline: even out small wiggles and round narrow notches and tips "
+                        "(scaled to the cookie size); default none")
+    s.add_argument("--from", dest="from_project", metavar="DIR",
+                   help="use the template and settings of an existing project (e.g. .work/cat/80mm); "
+                        "options given here change them")
     for key, v in DEFAULTS.items():
         s.add_argument("--" + key.replace("_", "-"), type=float, default=None, help=f"default {v}")
     add_lang(s)
@@ -134,7 +159,7 @@ def check_args(args):
     """Checks across options that argparse cannot express."""
     if getattr(args, "overwrite", False) and args.new_version:
         fail("use either --overwrite or --new-version")
-    if args.cmd in ("analyze", "build", "prepare") and args.size not in (None, "original"):
+    if args.cmd in ("analyze", "build", "simplify", "prepare") and args.size not in (None, "original"):
         try:
             float(args.size)
         except ValueError:

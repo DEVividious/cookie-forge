@@ -14,6 +14,7 @@ def params_from_args(args):
     p["no_bridges"] = args.no_bridges
     p["mirror"] = not args.no_mirror
     p["dough"] = args.dough
+    p["simplify_level"] = args.simplify_level
     if args.dough is not None:
         # the ridge ends IMPRINT_DEPTH above the board when the cutter is pressed through the dough
         if args.imprint_drop is not None:
@@ -37,4 +38,4 @@ def project_options(args):
     return dict(size=size, mode=args.mode, split=args.split, scale=args.scale, threshold=threshold,
                 invert=args.invert, dpi=args.dpi, holes=args.holes, imprint=args.imprint,
                 imprint_seams=args.imprint_seams, rotate=args.rotate, mirror=not args.no_mirror,
-                bridges=not args.no_bridges, dough=args.dough)
+                bridges=not args.no_bridges, dough=args.dough, simplify_level=args.simplify_level)

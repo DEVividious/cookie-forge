@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3.0
+
+- Outline simplification: `--simplify-level light|medium|strong` (default `none`) evens out small
+  wiggles along the outline and rounds narrow notches and tips; the strength scales with the
+  cookie size. A level that would merge or split outlines or close a hole is refused. The summary
+  has an "Outline simplification level" row; `project.json` records it under
+  `result.simplification`. Builds without simplification keep their fingerprint.
+- New `simplify` command: the current outline and the three levels side by side
+  (`.work/<name>/simplify.png`) with mean and max deviation from the template, narrowest notch and
+  triangle count, and a verdict whether the outline is complex enough to offer simplification
+  (a notch under 2 mm, or the medium level shortening the outline by at least 8 %).
+- `--from DIR` for `build`, `simplify` and `analyze`: reuse the template copy and the settings of
+  an existing project; options given on the command line change them. `project.json` now records
+  `build_args`.
+- The skill asks "simplify the outline?" only for complex outlines, and shows the variants only
+  after a yes.
+
 ## 1.2.0
 
 - New layout without `output/`: ready STL files go to `generated/<date>/<name>-<size>mm.stl`

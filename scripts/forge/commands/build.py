@@ -175,6 +175,6 @@ def build_into(pr, args, options):
             matches = json.load(f).get("fingerprint") == pr.fingerprint
     except (OSError, ValueError):
         matches = False
-    extra = dict(stl_check=chk, matches_dry_run=matches, stl_sha256=sha256_file(stl))
+    extra = dict(stl_check=chk, matches_dry_run=matches, stl_sha256=sha256_file(stl), build_args=build_args())
     write_json(manifest_path, manifest(pr, "built", options, extra))
     return ok, chk, matches

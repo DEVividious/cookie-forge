@@ -6,7 +6,7 @@ import numpy as np
 
 from ..geometry.design import bed_share
 from ..geometry.profile import bevel_height
-from ..i18n import num, pct, t, val
+from ..i18n import mm, num, pct, t, val
 
 
 def draw_preview(pr, path, V=None, F=None):
@@ -176,6 +176,44 @@ def draw_detection(sources_shapes, path, show_imprint=True):
         ax.set_axis_off()
     # wrapped to the figure width, so the title is never cut off
     fig.suptitle(textwrap.fill(t("Template reading: red = cutting edge, blue = imprint (view as in the image)"), 60 * cols), fontsize=10)
+    fig.savefig(path)
+    plt.close(fig)
+
+
+def draw_simplify(name, variants, path):
+    """Preview of `simplify`: the current outline and every level side by side, over the template
+    outline in grey, with the numbers that matter for choosing."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Polygon as MplPoly
+    from ..config import LEVEL_NAMES
+    fig, axes = plt.subplots(1, len(variants), figsize=(4.6 * len(variants), 5.6), dpi=100, squeeze=False,
+                             layout="constrained")
+    ref = next(v for v in variants if v["ok"])
+    minx, miny, maxx, maxy = ref["raw"].bounds
+    m = 0.05 * max(maxx - minx, maxy - miny)
+    for ax, v in zip(axes.flat, variants):
+        title = t(LEVEL_NAMES[v["level"]])
+        if v["ok"]:
+            for poly in getattr(v["body"], "geoms", [v["body"]]):
+                ax.add_patch(MplPoly(np.asarray(poly.exterior.coords), closed=True, facecolor="#fff3c4", edgecolor="#d62728", linewidth=1.5, zorder=1))
+                for r in poly.interiors:
+                    ax.add_patch(MplPoly(np.asarray(r.coords), closed=True, facecolor="white", edgecolor="#d62728", linewidth=1.5, zorder=1))
+            for poly in getattr(v["raw"], "geoms", [v["raw"]]):
+                for ring in [poly.exterior, *poly.interiors]:
+                    x, y = ring.xy
+                    ax.plot(x, y, color="#555555", linewidth=0.6, alpha=0.8, zorder=2)
+            title += "\n" + t("deviation: mean {mean}, max {max}", mean=mm(v["mean"], 2), max=mm(v["max"], 1))
+            title += "\n" + t("narrowest notch {gap} · {tri} triangles",
+                               gap=mm(v["gap"], 1) if v["gap"] else "-", tri=num(v["triangles"], 0))
+        else:
+            ax.text(0.5, 0.5, textwrap.fill(t("rejected: it would merge or split outlines or close a hole"), 28),
+                    ha="center", va="center", transform=ax.transAxes, fontsize=10, color="#555555")
+        ax.set_xlim(minx - m, maxx + m); ax.set_ylim(miny - m, maxy + m)
+        ax.set_aspect("equal"); ax.set_title(title, fontsize=10); ax.set_xticks([]); ax.set_yticks([])
+    fig.suptitle(textwrap.fill(t("{name}: outline simplification - red = cutting edge, grey = template outline", name=name),
+                               55 * len(variants)), fontsize=11)
     fig.savefig(path)
     plt.close(fig)
 

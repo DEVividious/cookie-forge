@@ -128,6 +128,38 @@ a cutter over 150 mm is awkward and bends. Say the table warnings ("thin feature
 notch") plainly: thin cookie parts break, narrow notches hold the dough. The size is always the
 longest side of the cookie (the cutting edge), without the flange.
 
+### 3a. Simplify the outline (only for complex outlines)
+
+Once the size is chosen, check the outline with the same flags you will build with:
+
+```bash
+uv run $SKILL/scripts/cookie_forge.py simplify template.png --size 80 --name cat
+```
+
+The first line says whether the outline is complex (a notch narrower than 2 mm, or many small
+wiggles: the medium level shortens the outline by at least 8 %). If it says "simple" or
+"simplification is not possible", don't mention simplification at all and go on. If it says
+"complex", ask one plain question (AskUserQuestion when available): **simplify the outline?**
+
+- **No, keep it as it is** (default, first).
+- **Yes, show me the variants**: a smoother cutting edge that prints cleaner and holds less dough,
+  but small details of the outline may disappear.
+
+Only after a "yes", look at the preview it saved (`.work/<name>/simplify.png`: the current outline
+and the light, medium and strong level side by side over the template outline in grey) and show
+it with the table (mean and max deviation from the template, narrowest notch, triangles). Let
+them choose one of four: light, medium, strong, or keep the original after all. Pass the choice as
+`--simplify-level light|medium|strong` to the dry run and the build. The levels scale with the
+cookie, so pick them after the size; a level that would merge or split outlines (the shared walls
+of a grid) is rejected and never offered.
+
+When the user asks to simplify an existing cutter ("uprość kontur Mikołaja"), skip the question:
+run `simplify --from .work/<name>/<size>mm` (the template and settings of that project), show the
+preview, and after the choice run the dry run and the build with
+`build --from .work/<name>/<size>mm --simplify-level <level>`. The build becomes a new version
+(`<size>mm-v2`, `<name>-<size>mm-v2.stl`); the original stays. `--from` works for any change to an
+existing single-template project: only the options given on the command line change.
+
 ### 4. Blade profile and other parameters
 
 The standard profile (described in `references/geometry.md`): height 18 mm, wall 1.2 mm,
@@ -290,7 +322,7 @@ generated/                    ready-to-print STL files only
     └── reindeer-100mm-v3.stl versions count across days
 .work/                        all working files
 └── <name>/                   safe slug of the name: "Mój renifer" -> moj-renifer (not translated)
-    ├── source-original.png   template versions (source-v1.png, ...), reading.png, prepare.png
+    ├── source-original.png   template versions (source-v1.png, ...), reading.png, prepare.png, simplify.png
     ├── 100mm/                one directory per size and version (100mm-v2 <-> reindeer-100mm-v2.stl)
     │   ├── preview.png       preview
     │   ├── source.png        exact copy of the template used (keeps its format: .jpg, .pdf, ...)
@@ -312,7 +344,7 @@ status, warnings, and the summary or report text).
 
 ## Skill files
 
-- `scripts/cookie_forge.py`: analysis, summary, STL build, preview, template preparation
+- `scripts/cookie_forge.py`: analysis, summary, STL build, preview, outline simplification, template preparation
   (`--help` lists everything); the code lives in `scripts/forge/`.
 - `references/geometry.md`: the profile standard and why, imprint, bridges, mirroring, print
   settings. Read it when the user asks "why" or wants to change something.

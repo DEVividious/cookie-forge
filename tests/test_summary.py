@@ -117,7 +117,7 @@ class Translations(unittest.TestCase):
                      and n.args and isinstance(n.args[0], ast.Constant)}
             tables.update({n.targets[0].id: n.value for n in tree.body
                            if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name)})
-        for name in ("DECISIONS", "ROLES", "STATUSES", "REPORT_ROLES"):
+        for name in ("DECISIONS", "ROLES", "STATUSES", "REPORT_ROLES", "LEVEL_NAMES"):
             keys |= set(ast.literal_eval(tables[name]).values())
         pl = ast.literal_eval(tables["PL"])
         self.assertEqual(keys - pl.keys(), set())

@@ -1,6 +1,6 @@
 """The dry-run summary (standard view). Every value comes from the Design computed by this run;
 Claude pastes it as is, so nothing has to be estimated or recalculated by hand."""
-from ..config import GAP_MIN, GAP_SEARCH_MAX, THIN_CRITICAL, THIN_MIN, THIN_SEARCH_MAX
+from ..config import GAP_MIN, GAP_SEARCH_MAX, LEVEL_NAMES, THIN_CRITICAL, THIN_MIN, THIN_SEARCH_MAX
 from ..geometry.design import bed_share
 from ..geometry.profile import bevel_height
 from ..i18n import count, mm, num, pct, t, val
@@ -150,6 +150,13 @@ def _processing_rows(pr):
 
     rows = [(t("Outline smoothing radius"), at_scale(p["smooth"])),
             (t("Outline simplification tolerance"), at_scale(p["simplify"]))]
+    if pr.simplified:
+        level, sigma, r = pr.simplified
+        rows.append((t("Outline simplification level"),
+                     t("{level}: wiggles averaged over {sigma}, notches and tips rounded to {r} (--simplify-level {key})",
+                       level=t(LEVEL_NAMES[level]), sigma=mm(sigma * pr.rescale, 1), r=mm(r * pr.rescale, 1), key=level)))
+    else:
+        rows.append((t("Outline simplification level"), t("off (--simplify-level none)")))
     if pr.ridges:
         rows.append((t("Imprint simplification tolerance"), t("{v} at model scale", v=mm(p["simplify"], 2))))
     if k.px_size:

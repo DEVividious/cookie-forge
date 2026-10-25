@@ -25,3 +25,8 @@ GAP_MIN = 2.0           # narrower notches hold the dough
 IMPRINT_DEPTH = 1.5     # imprint depth in the dough with --dough: deep enough to survive baking
 THIN_SEARCH_MAX = 40.0  # search range of thinnest_feature / narrowest_gap
 GAP_SEARCH_MAX = 30.0
+# Outline simplification levels (--simplify-level), as a share of the longest side of the cookie, so
+# a level means the same at 6 and at 15 cm: (contour averaging sigma, rounding radius).
+SIMPLIFY_LEVELS = dict(light=(0.008, 0.012), medium=(0.018, 0.020), strong=(0.035, 0.032))
+LEVEL_NAMES = {"none": "no simplification", "light": "light", "medium": "medium", "strong": "strong"}
+COMPLEX_SHRINK = 0.08   # an outline is complex when the medium level shortens it by this share (or a notch is narrow)

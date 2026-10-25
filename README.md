@@ -58,6 +58,8 @@ uv run scripts/cookie_forge.py build sheet.pdf --split --size original --bed "Pr
 uv run scripts/cookie_forge.py build --mode merge "star.png@0,0,70" "donut.png@0,-40,36" --size 90
 uv run scripts/cookie_forge.py build cat.png --size 80 --bed K1C --lang pl     # Polish output
 uv run scripts/cookie_forge.py build cat.png --size 80 --imprint auto --dough 6 # with an imprint
+uv run scripts/cookie_forge.py simplify cat.png --size 80 --name cat         # outline simplification variants
+uv run scripts/cookie_forge.py build --from .work/cat/80mm --simplify-level medium  # change an existing project
 uv run scripts/cookie_forge.py prepare cat.png --name cat --size 80          # detach inner lines
 uv run scripts/cookie_forge.py paths --name cat                                # where files go
 uv run scripts/cookie_forge.py build --help
@@ -76,7 +78,7 @@ generated/                    ready-to-print STL files only
     └── cat-100mm.stl         another size of the same cutter
 .work/                        all working files
 └── cat/                      safe slug of --name ("Mój kot" -> moj-kot, never translated)
-    ├── source-original.png   template versions seen by `analyze` + reading.png
+    ├── source-original.png   template versions seen by `analyze` + reading.png, simplify.png
     ├── 80mm/                 one directory per size and version (80mm-v2 <-> cat-80mm-v2.stl)
     │   ├── preview.png       top view, wall cross-section, 3D model
     │   ├── source.png        exact copy of the template used (original format kept)

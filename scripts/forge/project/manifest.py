@@ -49,8 +49,11 @@ IMPRINT_OPTIONS = ("dough", "imprint_seams")
 
 def fingerprint(sources, options, p, bed):
     """Identity of a project: source contents and every setting that changes the result.
-    Without an imprint (--imprint none) the imprint settings change nothing, so they don't count."""
+    Without an imprint (--imprint none) the imprint settings change nothing, so they don't count;
+    without simplification the option is left out, so builds made before it existed stay identical."""
     parameters = {k: p[k] for k in DEFAULTS}
+    if options.get("simplify_level", "none") == "none":
+        options = {k: v for k, v in options.items() if k != "simplify_level"}
     if options.get("imprint") == "none":
         parameters = {k: v for k, v in parameters.items() if k not in IMPRINT_PARAMETERS}
         options = {k: v for k, v in options.items() if k not in IMPRINT_OPTIONS}
@@ -89,6 +92,8 @@ def manifest(pr, stage, options, extra=None):
             imprint=dict(ridges=len(pr.ridges), holes_cut=k.holes_cut, holes_imprint=k.holes_imprint,
                          depth_mm=round(p["dough"] - p["imprint_drop"], 2) if p.get("dough") and pr.ridges else None),
             bridges=dict(count=len(pr.beams)),
+            simplification=dict(level=pr.simplified[0], sigma_mm=round(pr.simplified[1] * pr.rescale, 3),
+                                radius_mm=round(pr.simplified[2] * pr.rescale, 3)) if pr.simplified else None,
             checks=dict(thinnest_mm=round(pr.thinnest, 2), narrowest_mm=round(pr.narrowest, 2) if pr.narrowest else None,
                         fits_bed=pr.fits, fits_height=pr.fits_height, outlines=n_out, through_holes=n_holes),
         ),
