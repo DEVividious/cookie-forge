@@ -1,12 +1,12 @@
 # cookie-forge
 
-A Claude Code skill that turns an image or template into an STL file of a cookie / gingerbread
-cutter sized for your 3D printer's bed. Claude leads the conversation (template → printer → size
+A model-agnostic agent skill that turns an image or template into an STL file of a cookie /
+gingerbread cutter sized for your 3D printer's bed. The agent leads the conversation (template → printer → size
 → summary → approval → STL), and the geometry is computed by `scripts/cookie_forge.py`.
 
 The skill follows the user's language: ask in Polish ("Wygeneruj mi foremkę z tego pliku") and it
 answers in Polish. The script prints its summaries in English or Polish (`--lang en|pl`, with the
-matching decimal separator); for other languages Claude translates only the labels and never
+matching decimal separator); for other languages the agent translates only the labels and never
 changes the numbers.
 
 ## Examples
@@ -36,18 +36,52 @@ open. Dough may stick there; `--smooth 0.8` would close it.
 
 ## Installation
 
-Requirements: [Claude Code](https://claude.com/claude-code), Python 3.10+ and [uv](https://docs.astral.sh/uv/)
+Requirements: an agent that supports `SKILL.md` skills and shell execution, preferably with an
+image viewer; Python 3.10+ and [uv](https://docs.astral.sh/uv/)
 (`curl -LsSf https://astral.sh/uv/install.sh | sh`). `uv` downloads the libraries (numpy, shapely,
-OpenCV, manifold3d, trimesh, matplotlib, PyMuPDF) by itself on the first run.
+OpenCV, manifold3d, trimesh, matplotlib, PyMuPDF, Pillow) by itself on the first run, which needs
+network access and a writable uv cache. Use the host's permission flow when access is blocked.
+
+Keep `SKILL.md`, `scripts/` and `references/` together when installing into your agent's skill
+directory. Discovery locations and invocation syntax depend on the host application, not the
+model. Examples for [Claude Code](https://claude.com/claude-code) and
+[Codex](https://learn.chatgpt.com/docs/build-skills) are below; other compatible agents use the
+same files in their own skill directories. Replace `<this-repository>` with this repository's
+Git URL:
+
+| Agent | Personal installation | Project installation | Explicit invocation |
+|---|---|---|---|
+| Claude Code | `~/.claude/skills/cookie-forge` | `.claude/skills/cookie-forge` | `/cookie-forge` |
+| Codex CLI / IDE | `~/.agents/skills/cookie-forge` | `.agents/skills/cookie-forge` | `$cookie-forge` |
+
+For example, for Codex:
 
 ```bash
-git clone <this-repository> ~/.claude/skills/cookie-forge
+mkdir -p "$HOME/.agents/skills"
+git clone "<this-repository>" "$HOME/.agents/skills/cookie-forge"
 ```
 
-or for a single project: `.claude/skills/cookie-forge`. Then in Claude Code write e.g.
-"make me a cookie cutter from this image" or `/cookie-forge`.
+To share an existing Claude Code installation with Codex on Linux or macOS, use a symlink
+instead of a second clone (the destination must not already exist):
 
-## Using the script without Claude
+```bash
+mkdir -p "$HOME/.agents/skills"
+ln -s "$HOME/.claude/skills/cookie-forge" "$HOME/.agents/skills/cookie-forge"
+```
+
+Then ask the agent e.g. "make me a cookie cutter from this image", or use its explicit
+invocation above. If the installed skill does not appear, restart the agent. Opening this
+repository alone does not install its root `SKILL.md` into Codex's skill discovery locations.
+
+The workflow uses whichever question and image-viewing tools the host provides. Without a
+question tool it asks in the conversation; without an image viewer it asks you to inspect the
+saved preview. It shows the summary and waits for your approval before building the STL.
+
+## Using the script directly
+
+These examples assume the current directory is this repository and the templates are there.
+From another project, use the quoted absolute path to the installed `scripts/cookie_forge.py`
+instead. Output is relative to the current directory, not the script's installation directory.
 
 ```bash
 uv run scripts/cookie_forge.py printers "k1c"                                  # printer bed
@@ -112,7 +146,7 @@ Details and reasoning: `references/geometry.md`.
 
 ## Repository layout
 
-- `SKILL.md`: the conversation flow Claude follows.
+- `SKILL.md`: the model- and host-independent conversation flow.
 - `scripts/cookie_forge.py`: the command-line entry point (`--help` lists everything); the code is
   in the `scripts/forge/` package, split by subdomain (dependencies only point downwards):
 

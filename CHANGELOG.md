@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Made the skill model-agnostic, with host-specific installation and invocation examples in
+  the README and a symlink option for sharing one checkout between compatible agents.
+- Skill commands use an explicitly initialized, quoted skill-directory variable; scripts and
+  references resolve from the loaded `SKILL.md`, while output stays in the user's project.
+- Questions and preview inspection use the host's available tools, with conversation fallbacks;
+  summary approval is still required before building the STL.
+
 ## 1.3.0
 
 - Outline simplification: `--simplify-level light|medium|strong` (default `none`) evens out small

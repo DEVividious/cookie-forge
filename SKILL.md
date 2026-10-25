@@ -6,18 +6,41 @@ description: Guides the user step by step from an image or template to a ready-t
 # cookie-forge: a cookie cutter from an image
 
 The skill runs the conversation like a helpful friend with a 3D printer: one question at a time,
-it shows what it understood, and it builds the STL only after approval. All geometry is computed
-by `scripts/cookie_forge.py` in this skill's directory (below `$SKILL`; run it with `uv run`,
-which fetches the libraries itself; if `uv` is missing, suggest
-`curl -LsSf https://astral.sh/uv/install.sh | sh`). Always run it from the user's project
-directory (never `cd` into `$SKILL`): ready STL files go to `./generated/<date>/` there and
-working files to `./.work/`, see "Output files". When
-you have a tool for multiple-choice questions (AskUserQuestion), use it to pick the printer and
-the size; let the user give descriptions and templates in a normal message.
+it shows what it understood, and it builds the STL only after approval. The workflow is
+independent of the model and host application. All geometry is computed by `scripts/cookie_forge.py`.
 
 Don't: build the STL before the summary is approved (step 6), guess the printer or the size,
 write your own geometry generator when the script handles the case, or make up file names and
 paths: the script chooses them and prints the real ones; quote those.
+
+## Runtime and tools
+
+Resolve this skill's directory from the actual location of the `SKILL.md` you read; resolve
+`references/` and `scripts/` relative to it. Do not assume that the agent sets a skill-directory
+environment variable. In the shell examples below, `COOKIE_FORGE_SKILL_DIR` is a variable you
+must set to that absolute directory, replacing the example path:
+
+```bash
+COOKIE_FORGE_SKILL_DIR="/absolute/path/to/cookie-forge"
+uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" --help
+```
+
+The examples use POSIX shell syntax; adapt quoting and variable syntax to the available shell.
+If shell calls do not share variables, repeat the assignment in each call or use the quoted
+absolute script path directly. Run commands from the user's project directory (set the shell
+tool's working directory there); never change into the skill installation to run them. Ready
+STL files go to `./generated/<date>/` and working files to `./.work/`, see "Output files".
+
+Use Python 3.10+ and `uv run`, which installs the script's declared libraries. If `uv` is missing,
+suggest `curl -LsSf https://astral.sh/uv/install.sh | sh`. The first run needs package-download
+access and a writable uv cache; follow the host's permission flow if access is blocked.
+
+Use the host's available shell and image-viewing tools. Open PNG previews with an image-capable
+tool, not a text-only file reader. If no image viewer is available, give the user the preview
+path and ask them to inspect it; do not claim to have seen it. For choices such as printer and
+size, use a multiple-choice question tool when available in the current mode; otherwise ask
+the same question in the conversation and wait for the answer. Let the user give descriptions
+and templates in a normal message. Keep the summary approval in step 6 in every host.
 
 ## Language
 
@@ -57,20 +80,21 @@ Before going on, check the reading. The first reading uses `--imprint auto`, so 
 up in blue and you can tell whether there is anything to imprint:
 
 ```bash
-uv run $SKILL/scripts/cookie_forge.py analyze template.png --name reindeer --imprint auto
+uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" analyze template.png --name reindeer --imprint auto
 ```
 
 The script prints where it saved the reading preview (`.work/<name>/reading.png`) and
 keeps a copy of every distinct template it analysed (`.work/<name>/source-original.png`,
-`source-v1.png`, ...). Look at the preview (with the Read tool) and tell the user what you see: red line = cutting
-edge, blue = imprint, how many shapes, whether something was taken as noise. Ask them to open
+`source-v1.png`, ...). Open the preview with an image-viewing tool and tell the user what you see:
+red line = cutting edge, blue = imprint, how many shapes, whether something was taken as noise. Ask them to open
 the file too. If the reading is wrong, fix it: `--threshold 128` (manual black threshold),
 `--invert` (light shape on a dark background), `--holes cut|imprint|ignore` (white holes in the
 silhouette), `--split` (separate shapes on a sheet). For a photo or an image
 with a background, suggest preparing a clean template first.
 
-If the reading found inner lines (blue), ask what to do with them, as a choice (AskUserQuestion
-when available), before going on. Outline only is the default and comes first:
+If the reading found inner lines (blue), ask what to do with them, using a multiple-choice
+question tool when available or the conversation otherwise, before going on. Outline only is
+the default and comes first:
 
 - **Outline only** (default, nothing to pass): the cutter follows the outer contour; the inside of
   the cookie stays smooth, ready for icing.
@@ -91,7 +115,7 @@ the imprint and the reading shows inner lines doubled, or a blue line running al
 cutting edge, the lines touch the outline: offer to prepare a version where they stop 1 mm short of it,
 
 ```bash
-uv run $SKILL/scripts/cookie_forge.py prepare template.png --name <name> --size <mm>
+uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" prepare template.png --name cat --size 80
 ```
 
 then look at `.work/<name>/prepare.png` (cleared spots in red) and analyze the new version it
@@ -104,7 +128,7 @@ open arc, so show both images to the user before going on.
 Ask which printer they have. Bed sizes come from `references/printers.md`:
 
 ```bash
-uv run $SKILL/scripts/cookie_forge.py printers "ender 3"
+uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" printers "ender 3"
 ```
 
 If the printer is not on the list, ask for the bed size (width × depth in mm; it is in the
@@ -116,7 +140,7 @@ Then use `--bed "name"` or `--bed 220x220`.
 Show the size table from the script and let them choose, or accept the user's own dimensions:
 
 ```bash
-uv run $SKILL/scripts/cookie_forge.py analyze template.png --bed K1C
+uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" analyze template.png --bed K1C
 ```
 
 The table has variants S/M/L/XL (60/80/100/120 mm longest side of the cookie), MAX (the largest
@@ -133,13 +157,14 @@ longest side of the cookie (the cutting edge), without the flange.
 Once the size is chosen, check the outline with the same flags you will build with:
 
 ```bash
-uv run $SKILL/scripts/cookie_forge.py simplify template.png --size 80 --name cat
+uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" simplify template.png --size 80 --name cat
 ```
 
 The first line says whether the outline is complex (a notch narrower than 2 mm, or many small
 wiggles: the medium level shortens the outline by at least 8 %). If it says "simple" or
 "simplification is not possible", don't mention simplification at all and go on. If it says
-"complex", ask one plain question (AskUserQuestion when available): **simplify the outline?**
+"complex", ask one plain question: **simplify the outline?** Use a multiple-choice question tool
+when available or the conversation otherwise.
 
 - **No, keep it as it is** (default, first).
 - **Yes, show me the variants**: a smoother cutting edge that prints cleaner and holds less dough,
@@ -167,7 +192,7 @@ cutting edge 0.45 mm with a 10° outer bevel (vertical inside, so the side of th
 straight and the wedge pushes the dough outwards), flange 5 × 2 mm lying on the bed. Imprint
 (only with `--imprint auto`) set by `--dough` (or 3.5 mm lower than the cutting edge). Don't ask about these parameters; show them in the summary and
 change them only on request (`--blade-angle`, `--height`, `--wall`, `--flange`,
-`--imprint-drop` etc., full list: `uv run $SKILL/scripts/cookie_forge.py build --help`). For
+`--imprint-drop` etc., full list: `uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" build --help`). For
 firm dough (gingerbread, shortbread) suggest 10-12°, for soft and thick dough (sugar paste,
 fondant) 15-20° and a height of 12-15 mm.
 
@@ -189,14 +214,14 @@ fondant) 15-20° and a height of 12-15 mm.
   user wants something that flags can't do, draw a new PNG template with a simple PIL script
   (black on white, 1500-2000 px) and show it for approval before going on. Save drawn or edited
 templates to the `next_template` path printed by
-`uv run $SKILL/scripts/cookie_forge.py paths --name <name>`.
+`uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" paths --name cat`.
 
 ### 6. Summary and approval
 
 Before building, run a dry run with a 2D preview:
 
 ```bash
-uv run $SKILL/scripts/cookie_forge.py build template.png --size 80 --bed K1C --name cat \
+uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" build template.png --size 80 --bed K1C --name cat \
     --dry-run --preview-2d
 ```
 
@@ -262,7 +287,7 @@ section is exactly what step 7 runs: the same flags without `--dry-run` / `--pre
 Run the command from the "Build command" section of the approved summary, unchanged, e.g.:
 
 ```bash
-uv run $SKILL/scripts/cookie_forge.py build template.png --size 80 --bed K1C --name cat
+uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" build template.png --size 80 --bed K1C --name cat
 ```
 
 The script checks the STL (it must be "OK": watertight, a single solid), writes it to
