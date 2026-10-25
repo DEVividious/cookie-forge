@@ -42,7 +42,7 @@ is then the top you press with your palm, and the cutting edge goes into the dou
    negative (`--invert` forces it). A transparent PNG background counts as background.
 2. Contours with hierarchy. Every top-level contour is a separate shape. White holes in a black
    silhouette: a large hole (> 50 % of the area) means a contour drawing, and the black lines
-   inside it are the imprint; a small hole follows `--holes` (default `imprint`: presses its
+   inside it are the imprint (only with `--imprint auto`; by default the cutter is outline only); a small hole follows `--holes` (default `imprint`: presses its
    outline; `cut`: a real hole with its own cutting wall; `ignore`).
 3. Specks below 1 % of the largest shape are noise and are skipped (the `analyze` preview says
    how many).

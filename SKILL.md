@@ -10,7 +10,8 @@ it shows what it understood, and it builds the STL only after approval. All geom
 by `scripts/cookie_forge.py` in this skill's directory (below `$SKILL`; run it with `uv run`,
 which fetches the libraries itself; if `uv` is missing, suggest
 `curl -LsSf https://astral.sh/uv/install.sh | sh`). Always run it from the user's project
-directory (never `cd` into `$SKILL`): results go to `./output/` there, see "Output files". When
+directory (never `cd` into `$SKILL`): ready STL files go to `./generated/<date>/` there and
+working files to `./.work/`, see "Output files". When
 you have a tool for multiple-choice questions (AskUserQuestion), use it to pick the printer and
 the size; let the user give descriptions and templates in a normal message.
 
@@ -52,36 +53,40 @@ images").
 
 Agree on a short name for the cutter now (the user's word, e.g. "renifer"; don't translate it)
 and pass it as `--name` to every command, so all files of the cutter land in one directory.
-Before going on, check the reading:
+Before going on, check the reading. The first reading uses `--imprint auto`, so inner lines show
+up in blue and you can tell whether there is anything to imprint:
 
 ```bash
-uv run $SKILL/scripts/cookie_forge.py analyze template.png --name reindeer
+uv run $SKILL/scripts/cookie_forge.py analyze template.png --name reindeer --imprint auto
 ```
 
-The script prints where it saved the reading preview (`output/<name>/.work/reading.png`) and
-keeps a copy of every distinct template it analysed (`.work/source-original.png`,
+The script prints where it saved the reading preview (`.work/<name>/reading.png`) and
+keeps a copy of every distinct template it analysed (`.work/<name>/source-original.png`,
 `source-v1.png`, ...). Look at the preview (with the Read tool) and tell the user what you see: red line = cutting
 edge, blue = imprint, how many shapes, whether something was taken as noise. Ask them to open
 the file too. If the reading is wrong, fix it: `--threshold 128` (manual black threshold),
 `--invert` (light shape on a dark background), `--holes cut|imprint|ignore` (white holes in the
-silhouette), `--imprint none`, `--split` (separate shapes on a sheet). For a photo or an image
+silhouette), `--split` (separate shapes on a sheet). For a photo or an image
 with a background, suggest preparing a clean template first.
 
 If the reading found inner lines (blue), ask what to do with them, as a choice (AskUserQuestion
-when available), before going on:
+when available), before going on. Outline only is the default and comes first:
 
-- **Outline only** (`--imprint none`): the cutter follows the outer contour; the inside of the
-  cookie stays smooth.
-- **Outline + imprint** (default): the inner lines become ridges lower than the cutting edge, so
-  they don't cut through the dough but press the pattern into it; after baking the lines stay
-  slightly recessed in the cookie.
+- **Outline only** (default, nothing to pass): the cutter follows the outer contour; the inside of
+  the cookie stays smooth, ready for icing.
+- **Outline + imprint** (`--imprint auto`): the inner lines become ridges lower than the cutting
+  edge, so they don't cut through the dough but press the pattern into it; after baking the lines
+  stay slightly recessed in the cookie.
 
-If they choose the imprint, ask how thick they roll the dough (gingerbread usually 4-6 mm, rolled
-sugar cookies about 6 mm) and pass `--dough <mm>`: the script sets the ridges to press 1.5 mm deep,
-enough to survive baking without sinking the pattern too far. If they don't know, leave it out
-(ridges 3.5 mm below the cutting edge: a 1.5-2.5 mm imprint in 5-6 mm dough).
+Ask about the dough thickness only after the user has chosen the imprint, as a separate question;
+never put it in the same batch as the imprint question, and never ask it for an outline-only
+cutter (the thickness changes nothing there). Gingerbread is usually 4-6 mm, rolled sugar cookies
+about 6 mm; pass `--dough <mm>`: the script sets the ridges to press 1.5 mm deep, enough to survive
+baking without sinking the pattern too far. If they don't know, leave it out (ridges 3.5 mm below
+the cutting edge: a 1.5-2.5 mm imprint in 5-6 mm dough).
 
-Pass the choice (and `--dough`) to every later command (`analyze`, the dry run, the build). If the user wants
+With the imprint, pass `--imprint auto` (and `--dough`) to every later command (`analyze`, the dry
+run, the build); for an outline-only cutter pass neither. If the user wants
 the imprint and the reading shows inner lines doubled, or a blue line running along the red
 cutting edge, the lines touch the outline: offer to prepare a version where they stop 1 mm short of it,
 
@@ -89,8 +94,8 @@ cutting edge, the lines touch the outline: offer to prepare a version where they
 uv run $SKILL/scripts/cookie_forge.py prepare template.png --name <name> --size <mm>
 ```
 
-then look at `.work/prepare.png` (cleared spots in red) and analyze the new version it printed
-(`.work/source-v1.png`); continue with that file once the reading is right. Lines that only run
+then look at `.work/<name>/prepare.png` (cleared spots in red) and analyze the new version it
+printed (`.work/<name>/source-v1.png`); continue with that file once the reading is right. Lines that only run
 close to the outline may get trimmed and a closed shape touching it (e.g. a nose) becomes an
 open arc, so show both images to the user before going on.
 
@@ -128,7 +133,7 @@ longest side of the cookie (the cutting edge), without the flange.
 The standard profile (described in `references/geometry.md`): height 18 mm, wall 1.2 mm,
 cutting edge 0.45 mm with a 10° outer bevel (vertical inside, so the side of the cookie is
 straight and the wedge pushes the dough outwards), flange 5 × 2 mm lying on the bed. Imprint
-set by `--dough` (or 3.5 mm lower than the cutting edge). Don't ask about these parameters; show them in the summary and
+(only with `--imprint auto`) set by `--dough` (or 3.5 mm lower than the cutting edge). Don't ask about these parameters; show them in the summary and
 change them only on request (`--blade-angle`, `--height`, `--wall`, `--flange`,
 `--imprint-drop` etc., full list: `uv run $SKILL/scripts/cookie_forge.py build --help`). For
 firm dough (gingerbread, shortbread) suggest 10-12°, for soft and thick dough (sugar paste,
@@ -163,8 +168,8 @@ uv run $SKILL/scripts/cookie_forge.py build template.png --size 80 --bed K1C --n
     --dry-run --preview-2d
 ```
 
-A dry run builds no STL: it writes only `.work/dry-run.json` (the settings to approve) and
-`.work/dry-run-preview.png` in the project directory it will use. It prints the summary in the
+A dry run builds no STL: it writes only `dry-run.json` (the settings to approve) and
+`dry-run-preview.png` in the project directory it will use (`.work/<name>/<size>mm/`). It prints the summary in the
 standard format (below; one block per cutter). Look at the 2D preview, paste the summary to the
 user in full and unchanged (for languages other than English and Polish, translate labels only,
 as described in "Language"), add one sentence about what the preview shows, and ask plainly:
@@ -172,7 +177,7 @@ as described in "Language"), add one sentence about what the preview shows, and 
 every remark into a flag, repeat the dry run and show the changed rows of the new output.
 
 The "Project directory" row says what the build will do: a new directory, a new version
-(`80mm-v2`, because a build of that size with other settings exists), or nothing at all
+(`80mm-v2` and `cat-80mm-v2.stl`, because a build of that size with other settings exists), or nothing at all
 (identical settings already built). Mention a new version or an identical build in your
 sentence; don't ask anything extra.
 
@@ -203,12 +208,12 @@ The standard view (generated by the script; never retype or recompute it). Secti
 ### Planned files
 | File | Contents | Status |
 |---|---|---|
-| `output/cat/80mm/cutter.stl` | STL model for printing | will be created after approval |
-| `output/cat/80mm/preview.png` | preview: top view, wall cross-section, 3D model | will be created after approval |
-| `output/cat/80mm/source.png` | template used (exact copy) | will be created after approval |
-| `output/cat/80mm/project.json` | project manifest: parameters, results, STL check | will be created after approval |
-| `output/cat/80mm/.work/dry-run.json` | dry-run report with the settings to approve | created by this dry run |
-| `output/cat/80mm/.work/dry-run-preview.png` | 2D preview from this dry run | created by this dry run |
+| `generated/2026-12-01/cat-80mm.stl` | STL model for printing | will be created after approval |
+| `.work/cat/80mm/preview.png` | preview: top view, wall cross-section, 3D model | will be created after approval |
+| `.work/cat/80mm/source.png` | template used (exact copy) | will be created after approval |
+| `.work/cat/80mm/project.json` | project manifest: parameters, results, STL check | will be created after approval |
+| `.work/cat/80mm/dry-run.json` | dry-run report with the settings to approve | created by this dry run |
+| `.work/cat/80mm/dry-run-preview.png` | 2D preview from this dry run | created by this dry run |
 
 ### Build command
 ```bash
@@ -228,9 +233,10 @@ Run the command from the "Build command" section of the approved summary, unchan
 uv run $SKILL/scripts/cookie_forge.py build template.png --size 80 --bed K1C --name cat
 ```
 
-The script writes `cutter.stl`, `preview.png` (top view, cross-section, 3D model), the template
-copy `source.<ext>` and `project.json`, checks the STL (it must be "OK": watertight, a single
-solid) and prints a short report:
+The script checks the STL (it must be "OK": watertight, a single solid), writes it to
+`generated/<date>/<name>-<size>mm.stl`, writes `preview.png` (top view, cross-section, 3D model),
+the template copy `source.<ext>` and `project.json` to `.work/<name>/<size>mm/` and prints a short
+report:
 
 ```
 ## Cutter reindeer: ready
@@ -242,18 +248,19 @@ solid) and prints a short report:
 
 Files:
 
-- `output/reindeer/100mm/cutter.stl`: 3D print model
-- `output/reindeer/100mm/preview.png`: cutter preview
-- `output/reindeer/100mm/source.png`: template used
-- `output/reindeer/100mm/project.json`: project parameters
+- `generated/2026-12-01/reindeer-100mm.stl`: 3D print model
+- `.work/reindeer/100mm/preview.png`: cutter preview
+- `.work/reindeer/100mm/source.png`: template used
+- `.work/reindeer/100mm/project.json`: project parameters
 
-Location: `output/reindeer/100mm/`
+Location: `.work/reindeer/100mm/`
 ```
 
 A "Note: these settings were not shown in a dry run" line means the build skipped step 6;
 that should not happen.
 
-Look at `preview.png` first. If the check failed, don't hand over the file; change the
+Look at `preview.png` first. If the check failed, the model stays in the project directory as
+`cutter-rejected.stl` and never reaches `generated/`; don't hand it over; change the
 parameters (most often `--smooth 0.5` or `--no-bridges` plus a manual description of the
 problem helps). Otherwise give the user this report in their language (with `--lang pl` it is
 already Polish): keep the file names and paths exactly as printed, and make them clickable links
@@ -270,27 +277,38 @@ water, not in the dishwasher.
 ## Output files
 
 The script owns names and locations; paths are relative to the directory it runs in (the
-user's project), never to the skill installation. `--output-dir DIR` replaces `./output` when
-the user wants another place.
+user's project), never to the skill installation. `--output-dir DIR` puts `generated/` and
+`.work/` in DIR instead.
 
 ```
-output/
+generated/                    ready-to-print STL files only
+├── 2026-12-01/               one folder per build day (local date)
+│   ├── reindeer-100mm.stl    <name>-<size>mm.stl
+│   ├── reindeer-100mm-v2.stl same size, other settings
+│   └── reindeer-80mm.stl     another size of the same cutter
+└── 2026-12-02/
+    └── reindeer-100mm-v3.stl versions count across days
+.work/                        all working files
 └── <name>/                   safe slug of the name: "Mój renifer" -> moj-renifer (not translated)
-    ├── .work/                template versions (source-original.png, source-v1.png, ...) and reading.png
-    └── 100mm/                one directory per size (longest side of the cookie)
-        ├── cutter.stl        model for printing
-        ├── preview.png       preview
-        ├── source.png        exact copy of the template used (keeps its format: .jpg, .pdf, ...)
-        ├── project.json      manifest: options, parameters, results, checks, files, STL check
-        └── .work/            dry-run.json, dry-run-preview.png
+    ├── source-original.png   template versions (source-v1.png, ...), reading.png, prepare.png
+    ├── 100mm/                one directory per size and version (100mm-v2 <-> reindeer-100mm-v2.stl)
+    │   ├── preview.png       preview
+    │   ├── source.png        exact copy of the template used (keeps its format: .jpg, .pdf, ...)
+    │   ├── project.json      manifest: options, parameters, results, checks, files (with the STL path)
+    │   ├── notes.md          your notes for the user
+    │   └── dry-run.json      dry-run-preview.png too, after a dry run with --preview-2d
+    └── 100mm-v2/
 ```
 
-Re-running is safe: a dry run only refreshes `.work/`; a build with settings identical to an
-existing build changes nothing; a build with other settings goes to a new version directory
-(`100mm-v2`) and leaves the earlier one untouched; `--overwrite` (rebuild in place) and
-`--new-version` (always a new copy) are used only when the user asks. Two cutters with the same
-name in one run get `name` and `name-2`. Add `--json` to `build` for a machine-readable result
-(directories, files with their status, warnings, and the summary or report text).
+The version of a project directory and of its STL is the same, so the file name tells which
+settings it was built with. Re-running is safe: a dry run only refreshes the dry-run files; a
+build with settings identical to an existing build changes nothing (it reports the existing STL,
+also from an earlier day); a build with other settings goes to a new version (`100mm-v2`,
+`reindeer-100mm-v2.stl`) and leaves the earlier one untouched; `--overwrite` (rebuild in place: the
+STL is written again to today's folder and the old file removed) and `--new-version` (always a new
+copy) are used only when the user asks. Two cutters with the same name in one run get `name` and
+`name-2`. Add `--json` to `build` for a machine-readable result (directories, files with their
+status, warnings, and the summary or report text).
 
 ## Skill files
 

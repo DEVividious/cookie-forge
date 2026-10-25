@@ -1,5 +1,10 @@
-"""Output layout: OUTPUT/<slug>/<size>mm[-vN]/ with fixed file names, versions, template history.
+"""Output layout below ROOT (the current directory unless --output-dir):
+  generated/<date>/<slug>-<size>mm[-vN].stl   every STL that passed the check, ready to print
+  .work/<slug>/                               template history, reading and prepare previews
+  .work/<slug>/<size>mm[-vN]/                 preview, template copy, manifest, dry-run files
+The version of a size directory and of its STL is the same, so a file name points at its settings.
 Paths are resolved against the current directory (the user's project), never this package's."""
+import datetime
 import hashlib
 import json
 import os
@@ -8,10 +13,11 @@ import shutil
 import unicodedata
 
 
-STL_FILE = "cutter.stl"
+GENERATED_DIR = "generated"
+WORK_DIR = ".work"
+REJECTED_STL_FILE = "cutter-rejected.stl"
 PREVIEW_FILE = "preview.png"
 MANIFEST_FILE = "project.json"
-WORK_DIR = ".work"
 DRY_RUN_FILE = "dry-run.json"
 DRY_RUN_PREVIEW_FILE = "dry-run-preview.png"
 READING_FILE = "reading.png"
@@ -62,6 +68,17 @@ def write_json(path, data):
     os.replace(tmp, path)
 
 
+def cutter_dir(root, slug):
+    """Working directory of one cutter: ROOT/.work/<slug>/."""
+    return os.path.join(root, WORK_DIR, slug)
+
+
+def stl_path(root, slug, out_dir, day=None):
+    """The STL of the build in out_dir: ROOT/generated/<date>/<slug>-<size>mm[-vN].stl."""
+    day = day or datetime.date.today().isoformat()
+    return os.path.join(root, GENERATED_DIR, day, f"{slug}-{os.path.basename(os.path.normpath(out_dir))}.stl")
+
+
 def size_versions(cutter_dir, size_txt):
     """Existing version directories of one size as [(version, path)]: 100mm = 1, 100mm-v2 = 2, ..."""
     found = []
@@ -73,22 +90,29 @@ def size_versions(cutter_dir, size_txt):
     return sorted(found)
 
 
+def manifest_stl(d, m):
+    """Path of the STL a manifest in d refers to (stored relative to d), or None."""
+    rel = next((f["path"] for f in m.get("files", []) if f.get("role") == "stl"), None)
+    return os.path.normpath(os.path.join(d, rel)) if rel else None
+
+
 def built_manifest(d):
-    """The manifest of a finished build in d, or None."""
+    """The manifest of a finished build in d whose STL still exists, or None."""
     try:
         with open(os.path.join(d, MANIFEST_FILE), encoding="utf-8") as f:
             m = json.load(f)
     except (OSError, ValueError):
         return None
-    return m if m.get("stage") == "built" and os.path.exists(os.path.join(d, STL_FILE)) else None
+    stl = manifest_stl(d, m)
+    return m if m.get("stage") == "built" and stl and os.path.exists(stl) else None
 
 
-def is_free(d):
-    """A directory that holds no build (at most dry-run files) and can receive one."""
-    return not any(os.path.exists(os.path.join(d, f)) for f in (STL_FILE, MANIFEST_FILE))
+def is_free(d, stl=None):
+    """A directory that holds no build (at most dry-run files) and whose STL name is not taken."""
+    return not os.path.exists(os.path.join(d, MANIFEST_FILE)) and not (stl and os.path.exists(stl))
 
 
-def choose_target(cutter_dir, size_txt, fingerprint, overwrite=False, new_version=False):
+def choose_target(cutter_dir, size_txt, fingerprint, overwrite=False, new_version=False, stl_for=lambda d: None):
     """Where a build of these settings goes, and why:
     identical   - a build with the same fingerprint exists; nothing is rebuilt (unless overwrite)
     overwrite   - replace that identical build, or else the latest build of this size
@@ -101,12 +125,16 @@ def choose_target(cutter_dir, size_txt, fingerprint, overwrite=False, new_versio
         return same[0], "overwrite" if overwrite else "identical"
     if overwrite and built:
         return built[-1][0], "overwrite"
-    free = [d for _, d in versions if is_free(d)]
+    free = [d for _, d in versions if is_free(d, stl_for(d))]
     if free:
         target = free[0]
     else:
         v = versions[-1][0] + 1 if versions else 1
-        target = os.path.join(cutter_dir, f"{size_txt}mm" if v == 1 else f"{size_txt}mm-v{v}")
+        while True:                             # a foreign file may hold the STL name of today
+            target = os.path.join(cutter_dir, f"{size_txt}mm" if v == 1 else f"{size_txt}mm-v{v}")
+            if is_free(target, stl_for(target)):
+                break
+            v += 1
     return target, "new_version" if built else "new"
 
 
@@ -114,12 +142,12 @@ def planned_files(pr, preview_2d):
     """Files of a dry run: the results a build would write and the dry-run files written now."""
     status = dict(new="planned", new_version="planned", identical="exists", overwrite="overwrite")[pr.decision]
     d = pr.out_dir
-    files = [(os.path.join(d, STL_FILE), "stl", status), (os.path.join(d, PREVIEW_FILE), "preview", status)]
+    files = [(pr.stl_path, "stl", status), (os.path.join(d, PREVIEW_FILE), "preview", status)]
     files += [(os.path.join(d, r["file"]), r["role"], status) for _, r in pr.sources]
     files.append((os.path.join(d, MANIFEST_FILE), "manifest", status))
-    files.append((os.path.join(d, WORK_DIR, DRY_RUN_FILE), "dry_run", "created"))
+    files.append((os.path.join(d, DRY_RUN_FILE), "dry_run", "created"))
     if preview_2d:
-        files.append((os.path.join(d, WORK_DIR, DRY_RUN_PREVIEW_FILE), "dry_run_preview", "created"))
+        files.append((os.path.join(d, DRY_RUN_PREVIEW_FILE), "dry_run_preview", "created"))
     return files
 
 

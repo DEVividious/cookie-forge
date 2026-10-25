@@ -6,7 +6,7 @@ import numpy as np
 from ..errors import fail
 from ..i18n import mm, num, t
 from ..presentation.preview import draw_prepare
-from ..project.layout import PREPARE_FILE, WORK_DIR, next_template, record_template, show, slugify
+from ..project.layout import PREPARE_FILE, cutter_dir, next_template, record_template, show, slugify
 from ..template.prepare import apply_cuts, find_cuts
 from ..template.sources import load_sources, mask_from_source
 
@@ -14,7 +14,7 @@ from ..template.sources import load_sources, mask_from_source
 def cmd_prepare(args):
     """New template version with the inner lines detached from the outline (see detach_lines)."""
     z = _single_source(args)
-    work = os.path.join(args.output_dir, slugify(args.name or z.name), WORK_DIR)
+    work = cutter_dir(args.output_dir, slugify(args.name or z.name))
     mask, _, _ = mask_from_source(z, args.threshold, args.invert, min_width_px=0)
     longest_px = _longest_side_px(args, mask)
     mm_per_px = _mm_per_px(args, z, longest_px)

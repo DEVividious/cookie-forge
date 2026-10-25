@@ -13,8 +13,9 @@
 !/.github/
 
 # Generated anywhere: results, helper files, caches
-output/
+generated/
 .work/
+output/
 *.stl
 !/examples/**/*.stl
 *.3mf

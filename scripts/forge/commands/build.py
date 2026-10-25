@@ -1,4 +1,4 @@
-"""build: the dry run (summary, .work/ files) and the build itself (STL, preview, manifest)."""
+"""build: the dry run (summary, dry-run files) and the build itself (STL in generated/, preview, manifest)."""
 import json
 import os
 import re
@@ -14,8 +14,9 @@ from ..presentation.preview import draw_preview
 from ..presentation.report import build_report, cutter_result
 from ..presentation.summary import size_note, summary_md
 from ..printers import parse_bed
-from ..project.layout import (DRY_RUN_FILE, DRY_RUN_PREVIEW_FILE, MANIFEST_FILE, PREVIEW_FILE, STL_FILE, WORK_DIR,
-                              built_manifest, choose_target, planned_files, sha256_file, slugify, write_json)
+from ..project.layout import (DRY_RUN_FILE, DRY_RUN_PREVIEW_FILE, MANIFEST_FILE, PREVIEW_FILE, REJECTED_STL_FILE,
+                              built_manifest, choose_target, cutter_dir, manifest_stl, planned_files, sha256_file,
+                              slugify, stl_path, write_json)
 from ..project.manifest import fingerprint, manifest, source_records
 from ..project.settings import params_from_args, project_options
 from ..template.collect import collect_shapes
@@ -45,6 +46,7 @@ def _plan(args, options):
     p = params_from_args(args)
     shapes = collect_shapes(args)
     target = _target_size(args)
+    root = args.output_dir
     designs, taken = [], set()
     for i, k in enumerate(shapes):
         pr = design(k, p, bed, mirror=p["mirror"], target=target)
@@ -54,8 +56,13 @@ def _plan(args, options):
         _assign_slug(pr, k.name, taken)
         pr.sources = source_records(k)
         pr.fingerprint = fingerprint(pr.sources, options, p, bed)
-        pr.out_dir, pr.decision = choose_target(os.path.join(args.output_dir, pr.slug), pr.size_txt, pr.fingerprint,
-                                                args.overwrite, args.new_version)
+        pr.out_dir, pr.decision = choose_target(cutter_dir(root, pr.slug), pr.size_txt, pr.fingerprint,
+                                                args.overwrite, args.new_version,
+                                                stl_for=lambda d, slug=pr.slug: stl_path(root, slug, d))
+        if pr.decision == "identical":          # the STL of that build, possibly from an earlier day
+            pr.stl_path = manifest_stl(pr.out_dir, built_manifest(pr.out_dir))
+        else:
+            pr.stl_path = stl_path(root, pr.slug, pr.out_dir)
         designs.append(pr)
     return designs
 
@@ -80,16 +87,15 @@ def _assign_slug(pr, name, taken):
 
 
 def _dry_run(args, designs, options):
-    """Summary and .work/ files only: the dry-run report, optionally the 2D preview."""
+    """Summary and dry-run files only: the dry-run report, optionally the 2D preview."""
     command = build_command()
     results = []
     for pr in designs:
-        work = os.path.join(pr.out_dir, WORK_DIR)
-        os.makedirs(work, exist_ok=True)
+        os.makedirs(pr.out_dir, exist_ok=True)
         if args.preview_2d:
-            draw_preview(pr, os.path.join(work, DRY_RUN_PREVIEW_FILE))
+            draw_preview(pr, os.path.join(pr.out_dir, DRY_RUN_PREVIEW_FILE))
         pr.files = planned_files(pr, args.preview_2d)
-        write_json(os.path.join(work, DRY_RUN_FILE),
+        write_json(os.path.join(pr.out_dir, DRY_RUN_FILE),
                    manifest(pr, "dry-run", options, dict(decision=pr.decision, build_args=build_args())))
         md = summary_md(pr, command)
         results.append(dict(cutter_result(pr), summary_md=md))
@@ -121,25 +127,38 @@ def _existing_build(pr):
     """The result of the identical build already in pr.out_dir: (check ok, STL check, None)."""
     m = built_manifest(pr.out_dir)
     chk = m.get("stl_check")
-    pr.files = [(os.path.join(pr.out_dir, f["path"]), f["role"], "exists") for f in m.get("files", [])]
+    pr.files = [(os.path.normpath(os.path.join(pr.out_dir, f["path"])), f["role"], "exists") for f in m.get("files", [])]
     return bool(chk and chk.get("ok")), chk, None
 
 
 def build_into(pr, args, options):
-    """Builds one cutter into pr.out_dir; returns (check ok, STL check, matches the last dry run)."""
+    """Builds one cutter: the STL goes to generated/<date>/ when it passes the check (else it stays in
+    pr.out_dir as cutter-rejected.stl), the rest to pr.out_dir; returns (check ok, STL check, matches the
+    last dry run)."""
     d = pr.out_dir
     os.makedirs(d, exist_ok=True)
     manifest_path = os.path.join(d, MANIFEST_FILE)
+    old_stl = None
     if os.path.exists(manifest_path):           # --overwrite: the old manifest goes first, so an
-        os.remove(manifest_path)                # interrupted rebuild never looks like a finished one
+        try:                                    # interrupted rebuild never looks like a finished one
+            with open(manifest_path, encoding="utf-8") as f:
+                old_stl = manifest_stl(d, json.load(f))
+        except (OSError, ValueError):
+            pass
+        os.remove(manifest_path)
     t0 = time.time()
     solid = build_solid(pr)
-    stl = os.path.join(d, STL_FILE)
-    n, V, F = save_stl(solid, stl + ".tmp", pr.shape.name)
-    os.replace(stl + ".tmp", stl)
-    chk = check_stl(stl)
+    tmp = os.path.join(d, "cutter.tmp.stl")         # trimesh reads the format from the extension
+    n, V, F = save_stl(solid, tmp, pr.shape.name)
+    chk = check_stl(tmp)
     ok = chk["watertight"] and chk["winding_consistent"] and chk["bodies"] == 1
     chk = dict(chk, ok=ok, seconds=round(time.time() - t0, 1))
+    stl = pr.stl_path if ok else os.path.join(d, REJECTED_STL_FILE)
+    os.makedirs(os.path.dirname(stl), exist_ok=True)
+    os.replace(tmp, stl)
+    for stale in (old_stl, os.path.join(d, REJECTED_STL_FILE)):
+        if stale and os.path.abspath(stale) != os.path.abspath(stl) and os.path.exists(stale):
+            os.remove(stale)
     preview = os.path.join(d, PREVIEW_FILE)
     draw_preview(pr, preview, None if args.no_3d else V, None if args.no_3d else F)
     keep = {r["file"] for _, r in pr.sources}
@@ -152,7 +171,7 @@ def build_into(pr, args, options):
     pr.files += [(os.path.join(d, r["file"]), r["role"], "created") for _, r in pr.sources]
     pr.files.append((manifest_path, "manifest", "created"))
     try:
-        with open(os.path.join(d, WORK_DIR, DRY_RUN_FILE), encoding="utf-8") as f:
+        with open(os.path.join(d, DRY_RUN_FILE), encoding="utf-8") as f:
             matches = json.load(f).get("fingerprint") == pr.fingerprint
     except (OSError, ValueError):
         matches = False

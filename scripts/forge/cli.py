@@ -59,8 +59,8 @@ def build_parser():
 
     b = sub.add_parser("build", help="build the STL (or only the summary with --dry-run)")
     add_source_options(b)
-    b.add_argument("--dry-run", action="store_true", help="only the project summary and .work/ files, no STL")
-    b.add_argument("--preview-2d", action="store_true", help="with --dry-run also save .work/dry-run-preview.png")
+    b.add_argument("--dry-run", action="store_true", help="only the project summary and dry-run files, no STL")
+    b.add_argument("--preview-2d", action="store_true", help="with --dry-run also save dry-run-preview.png")
     b.add_argument("--no-3d", action="store_true", help="skip the 3D view in the preview (faster)")
     b.add_argument("--overwrite", action="store_true", help="rebuild in place: replace the identical or latest build of this size")
     b.add_argument("--new-version", action="store_true", help="always write a new version directory (<size>mm-vN)")
@@ -70,7 +70,7 @@ def build_parser():
     pr = sub.add_parser("prepare", help="new template version with inner lines detached from the outline (for an imprint)")
     pr.add_argument("source", metavar="SOURCE", help="PNG/JPG/one-page PDF")
     pr.add_argument("--name", help="cutter name (its directory is a safe slug of it)")
-    pr.add_argument("--output-dir", "--out-dir", dest="output_dir", default="output")
+    pr.add_argument("--output-dir", "--out-dir", dest="output_dir", default=".")
     pr.add_argument("--size", help="cookie size in mm (longest side) the gap is measured at, or 'original'; default 100")
     pr.add_argument("--gap", type=float, default=1.0, help="gap between the inner lines and the outline in mm; default 1.0")
     pr.add_argument("--threshold", default="auto", help="black threshold 0-255 or auto (Otsu)")
@@ -81,7 +81,7 @@ def build_parser():
 
     pa = sub.add_parser("paths", help="print where the files of a cutter go (JSON)")
     pa.add_argument("--name", required=True)
-    pa.add_argument("--output-dir", "--out-dir", dest="output_dir", default="output")
+    pa.add_argument("--output-dir", "--out-dir", dest="output_dir", default=".")
     pa.add_argument("--ext", default="png", help="extension of the next template version")
     pa.set_defaults(fn=cmd_paths, lang="en")
 
@@ -108,15 +108,16 @@ def add_source_options(s):
     s.add_argument("--scale", choices=["shared", "separate"], default="shared",
                    help="with --split: shared scale (largest shape = --size) or every shape = --size")
     s.add_argument("--name", help="cutter name (its directory is a safe slug of it)")
-    s.add_argument("--output-dir", "--out-dir", dest="output_dir", default="output",
-                   help="root of the results, relative to the current directory; default ./output")
+    s.add_argument("--output-dir", "--out-dir", dest="output_dir", default=".",
+                   help="where generated/ (ready STL files) and .work/ (working files) go; default: the current directory")
     s.add_argument("--names", help="comma-separated names of consecutive cutters")
     s.add_argument("--threshold", default="auto", help="black threshold 0-255 or auto (Otsu)")
     s.add_argument("--invert", action="store_true", help="invert: light = shape")
     s.add_argument("--dpi", type=int, default=200, help="PDF rendering resolution")
     s.add_argument("--holes", choices=["imprint", "cut", "ignore"], default="imprint",
                    help="what to do with white holes inside a black silhouette")
-    s.add_argument("--imprint", choices=["auto", "none"], default="auto", help="imprint from the inner lines of the template")
+    s.add_argument("--imprint", choices=["auto", "none"], default="none",
+                   help="auto: inner lines of the template become an imprint; default none: outline only")
     s.add_argument("--dough", type=float, metavar="MM",
                    help=f"dough thickness; the imprint ridge is set to press {IMPRINT_DEPTH} mm deep (instead of --imprint-drop)")
     s.add_argument("--imprint-seams", action="store_true", help="in merge mode: imprint the seams between merged shapes")

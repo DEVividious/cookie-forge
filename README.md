@@ -12,8 +12,9 @@ changes the numbers.
 ## Examples
 
 Cutters made by going through the whole skill (100 mm, Creality K1C): three outline only, two
-with an imprint. Each directory holds what the skill produces: `cutter.stl`, `preview.png`,
-`source.png` (the template used), `project.json` and `notes.md`.
+with an imprint. Each directory holds one finished cutter: `cutter.stl`, `preview.png`,
+`source.png` (the template used), `project.json` and `notes.md` (the skill itself puts the STL in
+`generated/` and the rest in `.work/`, see "Output").
 
 | Template | Result | Files |
 |---|---|---|
@@ -56,6 +57,7 @@ uv run scripts/cookie_forge.py build cat.png --size 80 --bed K1C --name cat
 uv run scripts/cookie_forge.py build sheet.pdf --split --size original --bed "Prusa MK4"
 uv run scripts/cookie_forge.py build --mode merge "star.png@0,0,70" "donut.png@0,-40,36" --size 90
 uv run scripts/cookie_forge.py build cat.png --size 80 --bed K1C --lang pl     # Polish output
+uv run scripts/cookie_forge.py build cat.png --size 80 --imprint auto --dough 6 # with an imprint
 uv run scripts/cookie_forge.py prepare cat.png --name cat --size 80          # detach inner lines
 uv run scripts/cookie_forge.py paths --name cat                                # where files go
 uv run scripts/cookie_forge.py build --help
@@ -63,25 +65,31 @@ uv run scripts/cookie_forge.py build --help
 
 ## Output
 
-Results go to `./output/` in the directory you run the script from (your project, not the
-skill installation); `--output-dir DIR` puts them elsewhere.
+Everything goes to the directory you run the script from (your project, not the skill
+installation); `--output-dir DIR` puts it elsewhere.
 
 ```
-output/
+generated/                    ready-to-print STL files only
+└── 2026-12-01/               one folder per build day
+    ├── cat-80mm.stl          <name>-<size>mm.stl
+    ├── cat-80mm-v2.stl       same size, other settings (versions count across days)
+    └── cat-100mm.stl         another size of the same cutter
+.work/                        all working files
 └── cat/                      safe slug of --name ("Mój kot" -> moj-kot, never translated)
-    ├── .work/                template versions seen by `analyze` + reading.png
-    └── 80mm/                 one directory per size
-        ├── cutter.stl        model for printing
-        ├── preview.png       top view, wall cross-section, 3D model
-        ├── source.png        exact copy of the template used (original format kept)
-        ├── project.json      manifest (schema 1): options, parameters, results, checks, files
-        └── .work/            dry-run.json, dry-run-preview.png
+    ├── source-original.png   template versions seen by `analyze` + reading.png
+    ├── 80mm/                 one directory per size and version (80mm-v2 <-> cat-80mm-v2.stl)
+    │   ├── preview.png       top view, wall cross-section, 3D model
+    │   ├── source.png        exact copy of the template used (original format kept)
+    │   ├── project.json      manifest (schema 1): options, parameters, results, checks, files
+    │   └── dry-run.json      + dry-run-preview.png after a dry run
+    └── 80mm-v2/
 ```
 
 `--dry-run` builds no STL: it prints the summary (with the exact build command) and writes only
-`.work/` files. Results are never replaced silently: identical settings → nothing is rebuilt;
-other settings → a new version directory (`80mm-v2`); `--overwrite` rebuilds in place and
-`--new-version` always makes a new copy. `--json` prints a machine-readable result.
+the dry-run files. Results are never replaced silently: identical settings → nothing is rebuilt;
+other settings → a new version (`80mm-v2`, `cat-80mm-v2.stl`); `--overwrite` rebuilds in place and
+`--new-version` always makes a new copy. A model that fails the check stays in its project
+directory as `cutter-rejected.stl`. `--json` prints a machine-readable result.
 
 ## Tests
 
@@ -95,8 +103,8 @@ The tests run the script with `uv run` on the simple templates in `tests/fixture
 ## Cutter standard
 
 Flange 5 × 2 mm on the bed, wall 1.2 mm, height 18 mm, cutting edge 0.45 mm with a 10° outer
-bevel and a vertical inner side, imprint from the template's inner lines (1.5 mm deep with
-`--dough`, otherwise 3.5 mm below the cutting edge), loose parts joined with bridges, model
+bevel and a vertical inner side, outline only by default; with `--imprint auto` the template's
+inner lines become an imprint (1.5 mm deep with `--dough`, otherwise 3.5 mm below the cutting edge), loose parts joined with bridges, model
 mirrored (the cookie looks like the template).
 Details and reasoning: `references/geometry.md`.
 
@@ -125,5 +133,5 @@ Details and reasoning: `references/geometry.md`.
   `tests/fixtures/` holds their templates.
 - `CHANGELOG.md`: changes of behaviour between versions.
 - `.gitignore`: a whitelist; only the entries above are tracked, so cutters you make while
-  developing (`output/`, templates, STL files) never end up in the repository. Add a new
+  developing (`generated/`, `.work/`, templates, STL files) never end up in the repository. Add a new
   top-level file or directory to it on purpose.

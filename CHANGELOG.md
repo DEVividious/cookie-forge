@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.0
+
+- New layout without `output/`: ready STL files go to `generated/<date>/<name>-<size>mm.stl`
+  (another version of the same size: `<name>-<size>mm-v2.stl`, ...; versions count across days
+  and match the project directory), all working files to `.work/<name>/` (template versions,
+  `reading.png`, `prepare.png`) and `.work/<name>/<size>mm[-vN]/` (`preview.png`, `source.*`,
+  `project.json`, `dry-run.json`, `dry-run-preview.png`; no nested `.work/` any more).
+  `--output-dir` (default: the current directory) holds both. A model that fails the check is
+  kept as `cutter-rejected.stl` in its project directory and never reaches `generated/`.
+  `project.json` lists the STL with its path relative to the project directory.
+  `--overwrite` writes the STL again to today's folder and removes the old file.
+- Outline only is the default: `--imprint` defaults to `none`; `--imprint auto` turns the inner
+  lines into an imprint. The skill asks about the dough thickness only after the imprint was
+  chosen, never together with the imprint question.
+- `paths` prints `generated_dir`; `work_dir` is gone (`cutter_dir` is the working directory).
+- Fixed a crash of `analyze` (and of `build` summaries) when a template note was printed:
+  `t()` took its own `text` argument for the `{text}` placeholder.
+
 ## 1.1.0
 
 - Results go to `./output/<name>/<size>mm/` relative to the current directory (the user's

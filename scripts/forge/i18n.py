@@ -13,7 +13,7 @@ def set_language(lang):
     LANG = lang
 
 
-def t(text, **kw):
+def t(text, /, **kw):
     if LANG == "pl":
         tr = PL.get(text)
         if tr is None and os.environ.get("COOKIE_FORGE_STRICT"):

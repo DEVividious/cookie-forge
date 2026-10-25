@@ -7,7 +7,7 @@ from ..geometry.outline import smooth_body
 from ..i18n import mm, num, pct, t
 from ..presentation.preview import draw_detection
 from ..printers import parse_bed
-from ..project.layout import READING_FILE, WORK_DIR, record_template, show, slugify
+from ..project.layout import READING_FILE, cutter_dir, record_template, show, slugify
 from ..project.settings import params_from_args
 from ..template.collect import collect_shapes
 from ..template.shapes import Shape, outline_counts, transform
@@ -84,7 +84,7 @@ def _size_row(name, pr, bed):
 def _save_reading(args, shapes):
     """The reading preview and, for a single template, its copy in the template history."""
     first = parse_source(args.sources[0])[0]
-    work = os.path.join(args.output_dir, slugify(args.name or os.path.splitext(os.path.basename(first))[0]), WORK_DIR)
+    work = cutter_dir(args.output_dir, slugify(args.name or os.path.splitext(os.path.basename(first))[0]))
     preview = args.preview or os.path.join(work, READING_FILE)
     os.makedirs(os.path.dirname(os.path.abspath(preview)), exist_ok=True)
     draw_detection([(f"{k.name}", k) for k in shapes], preview, show_imprint=args.imprint != "none")
