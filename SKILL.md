@@ -1,12 +1,13 @@
 ---
 name: cookie-forge
-description: Guides the user step by step from an image or template to a ready-to-print STL cookie cutter (cookies, gingerbread, shortbread, fondant / sugar paste cutters), fitted to their 3D printer. Use it whenever the user mentions a cookie cutter, dough cutter, cookie stamp, gingerbread or fondant shapes, wants to "make a cutter from a picture / logo / letter / child's drawing", has templates in a PDF or several shapes on one sheet, or asks how to design a cutter for 3D printing, even without saying STL. The user may write in any language (e.g. Polish "foremka", "wykrawacz do ciastek", "pierniki"; German "Ausstecher"; Spanish "cortador de galletas"). Also for changes to a cutter made with this skill (another size, another printer, no imprint).
+description: Create or revise 3D-printable cookie cutters from images, drawings or PDF templates, with an optional imprint. Guides template reading, printer fit, sizing, simplification, preview approval and STL generation. Use for cookie, gingerbread or fondant cutters (including Polish "foremka" and "wykrawacz") and edits to cutters made with this skill.
 ---
 
 # cookie-forge: a cookie cutter from an image
 
 The skill runs the conversation like a helpful friend with a 3D printer: one question at a time,
-it shows what it understood, and it builds the STL only after approval. The workflow is
+it shows what it understood, and it builds the STL only after approval. Reuse choices already
+supplied by the user (name, printer, size, imprint); ask only for missing information. The workflow is
 independent of the model and host application. All geometry is computed by `scripts/cookie_forge.py`.
 
 Don't: build the STL before the summary is approved (step 6), guess the printer or the size,
@@ -28,12 +29,13 @@ uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" --help
 The examples use POSIX shell syntax; adapt quoting and variable syntax to the available shell.
 If shell calls do not share variables, repeat the assignment in each call or use the quoted
 absolute script path directly. Run commands from the user's project directory (set the shell
-tool's working directory there); never change into the skill installation to run them. Ready
-STL files go to `./generated/<date>/` and working files to `./.work/`, see "Output files".
+tool's working directory there); never change into the skill installation to run them. All
+files go to `./cookie-forge-output/`, grouped by cutter, see "Output files".
 
 Use Python 3.10+ and `uv run`, which installs the script's declared libraries. If `uv` is missing,
-suggest `curl -LsSf https://astral.sh/uv/install.sh | sh`. The first run needs package-download
-access and a writable uv cache; follow the host's permission flow if access is blocked.
+suggest `curl -LsSf https://astral.sh/uv/install.sh | sh` on Linux/macOS, or
+`winget install --id=astral-sh.uv -e` in Windows PowerShell. Reopen the host if its PATH is stale.
+The first run needs package-download access and a writable uv cache; follow the host's permission flow if access is blocked.
 
 Use the host's available shell and image-viewing tools. Open PNG previews with an image-capable
 tool, not a text-only file reader. If no image viewer is available, give the user the preview
@@ -41,6 +43,10 @@ path and ask them to inspect it; do not claim to have seen it. For choices such 
 size, use a multiple-choice question tool when available in the current mode; otherwise ask
 the same question in the conversation and wait for the answer. Let the user give descriptions
 and templates in a normal message. Keep the summary approval in step 6 in every host.
+
+Native Windows has not been validated end to end. Printed build commands currently use POSIX
+quoting: on another shell, preserve the exact argument values but adapt quoting and variable
+syntax; do not execute POSIX escapes verbatim in PowerShell or cmd.exe.
 
 ## Language
 
@@ -83,8 +89,8 @@ up in blue and you can tell whether there is anything to imprint:
 uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" analyze template.png --name reindeer --imprint auto
 ```
 
-The script prints where it saved the reading preview (`.work/<name>/reading.png`) and
-keeps a copy of every distinct template it analysed (`.work/<name>/source-original.png`,
+The script prints where it saved the reading preview (`cookie-forge-output/projects/<name>/previews/reading-*.png`) and
+keeps a copy of every distinct template it analysed (`cookie-forge-output/projects/<name>/templates/source-original.png`,
 `source-v1.png`, ...). Open the preview with an image-viewing tool and tell the user what you see:
 red line = cutting edge, blue = imprint, how many shapes, whether something was taken as noise. Ask them to open
 the file too. If the reading is wrong, fix it: `--threshold 128` (manual black threshold),
@@ -118,8 +124,8 @@ cutting edge, the lines touch the outline: offer to prepare a version where they
 uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" prepare template.png --name cat --size 80
 ```
 
-then look at `.work/<name>/prepare.png` (cleared spots in red) and analyze the new version it
-printed (`.work/<name>/source-v1.png`); continue with that file once the reading is right. Lines that only run
+then look at `cookie-forge-output/projects/<name>/previews/prepare-*.png` (cleared spots in red) and analyze the new version it
+printed (`cookie-forge-output/projects/<name>/templates/source-v1.png`); continue with that file once the reading is right. Lines that only run
 close to the outline may get trimmed and a closed shape touching it (e.g. a nose) becomes an
 open arc, so show both images to the user before going on.
 
@@ -170,8 +176,8 @@ when available or the conversation otherwise.
 - **Yes, show me the variants**: a smoother cutting edge that prints cleaner and holds less dough,
   but small details of the outline may disappear.
 
-Only after a "yes", look at the preview it saved (`.work/<name>/simplify.png`: the current outline
-and the light, medium and strong level side by side over the template outline in grey) and show
+Only after a "yes", look at the numbered comparison preview it printed: the current outline
+and the light, medium and strong level side by side over the template outline in grey. Show
 it with the table (mean and max deviation from the template, narrowest notch, triangles). Let
 them choose one of four: light, medium, strong, or keep the original after all. Pass the choice as
 `--simplify-level light|medium|strong` to the dry run and the build. The levels scale with the
@@ -179,10 +185,10 @@ cookie, so pick them after the size; a level that would merge or split outlines 
 of a grid) is rejected and never offered.
 
 When the user asks to simplify an existing cutter ("uprość kontur Mikołaja"), skip the question:
-run `simplify --from .work/<name>/<size>mm` (the template and settings of that project), show the
+run `simplify --from cookie-forge-output/projects/<name>/builds/<size>mm-v1` (the template and settings of that project), show the
 preview, and after the choice run the dry run and the build with
-`build --from .work/<name>/<size>mm --simplify-level <level>`. The build becomes a new version
-(`<size>mm-v2`, `<name>-<size>mm-v2.stl`); the original stays. `--from` works for any change to an
+`build --from cookie-forge-output/projects/<name>/builds/<size>mm-v1 --simplify-level <level>`. The build becomes a new version
+(`exports/<date>/<name>-<size>mm-v2.stl`); the original stays. `--from` works for any change to an
 existing single-template project: only the options given on the command line change.
 
 ### 4. Blade profile and other parameters
@@ -226,7 +232,7 @@ uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" build template.png --
 ```
 
 A dry run builds no STL: it writes only `dry-run.json` (the settings to approve) and
-`dry-run-preview.png` in the project directory it will use (`.work/<name>/<size>mm/`). It prints the summary in the
+a version-named PNG in the cutter's `previews/` folder; the JSON stays in the build directory. It prints the summary in the
 standard format (below; one block per cutter). Look at the 2D preview, paste the summary to the
 user in full and unchanged (for languages other than English and Polish, translate labels only,
 as described in "Language"), add one sentence about what the preview shows, and ask plainly:
@@ -234,7 +240,7 @@ as described in "Language"), add one sentence about what the preview shows, and 
 every remark into a flag, repeat the dry run and show the changed rows of the new output.
 
 The "Project directory" row says what the build will do: a new directory, a new version
-(`80mm-v2` and `cat-80mm-v2.stl`, because a build of that size with other settings exists), or nothing at all
+(`builds/80mm-v2/` and `exports/<date>/cat-80mm-v2.stl`, because a build of that size with other settings exists), or nothing at all
 (identical settings already built). Mention a new version or an identical build in your
 sentence; don't ask anything extra.
 
@@ -265,12 +271,12 @@ The standard view (generated by the script; never retype or recompute it). Secti
 ### Planned files
 | File | Contents | Status |
 |---|---|---|
-| `generated/2026-12-01/cat-80mm.stl` | STL model for printing | will be created after approval |
-| `.work/cat/80mm/preview.png` | preview: top view, wall cross-section, 3D model | will be created after approval |
-| `.work/cat/80mm/source.png` | template used (exact copy) | will be created after approval |
-| `.work/cat/80mm/project.json` | project manifest: parameters, results, STL check | will be created after approval |
-| `.work/cat/80mm/dry-run.json` | dry-run report with the settings to approve | created by this dry run |
-| `.work/cat/80mm/dry-run-preview.png` | 2D preview from this dry run | created by this dry run |
+| `cookie-forge-output/exports/2026-12-01/cat-80mm-v1.stl` | STL model for printing | will be created after approval |
+| `cookie-forge-output/projects/cat/previews/80mm-v1-model.png` | preview: top view, wall cross-section, 3D model | will be created after approval |
+| `cookie-forge-output/projects/cat/builds/80mm-v1/source.png` | template used (exact copy) | will be created after approval |
+| `cookie-forge-output/projects/cat/builds/80mm-v1/project.json` | project manifest: parameters, results, STL check | will be created after approval |
+| `cookie-forge-output/projects/cat/builds/80mm-v1/dry-run.json` | dry-run report with the settings to approve | created by this dry run |
+| `cookie-forge-output/projects/cat/previews/80mm-v1-dry-run.png` | 2D preview from this dry run | created by this dry run |
 
 ### Build command
 ```bash
@@ -284,15 +290,17 @@ section is exactly what step 7 runs: the same flags without `--dry-run` / `--pre
 
 ### 7. Build, check, hand over
 
-Run the command from the "Build command" section of the approved summary, unchanged, e.g.:
+Run the command from the "Build command" section of the approved summary, preserving every
+argument (adapt only shell quoting if needed), e.g.:
 
 ```bash
 uv run "${COOKIE_FORGE_SKILL_DIR}/scripts/cookie_forge.py" build template.png --size 80 --bed K1C --name cat
 ```
 
 The script checks the STL (it must be "OK": watertight, a single solid), writes it to
-`generated/<date>/<name>-<size>mm.stl`, writes `preview.png` (top view, cross-section, 3D model),
-the template copy `source.<ext>` and `project.json` to `.work/<name>/<size>mm/` and prints a short
+`cookie-forge-output/exports/<date>/<name>-<size>mm-vN.stl`, writes a version-named PNG
+in `previews/` (top view, cross-section, 3D model),
+the template copy `source.<ext>` and `project.json` to `cookie-forge-output/projects/<name>/builds/<size>mm-v1/` and prints a short
 report:
 
 ```
@@ -305,19 +313,19 @@ report:
 
 Files:
 
-- `generated/2026-12-01/reindeer-100mm.stl`: 3D print model
-- `.work/reindeer/100mm/preview.png`: cutter preview
-- `.work/reindeer/100mm/source.png`: template used
-- `.work/reindeer/100mm/project.json`: project parameters
+- `cookie-forge-output/exports/2026-12-01/reindeer-100mm-v1.stl`: 3D print model
+- `cookie-forge-output/projects/reindeer/previews/100mm-v1-model.png`: cutter preview
+- `cookie-forge-output/projects/reindeer/builds/100mm-v1/source.png`: template used
+- `cookie-forge-output/projects/reindeer/builds/100mm-v1/project.json`: project parameters
 
-Location: `.work/reindeer/100mm/`
+Location: `cookie-forge-output/projects/reindeer/builds/100mm-v1/`
 ```
 
 A "Note: these settings were not shown in a dry run" line means the build skipped step 6;
 that should not happen.
 
-Look at `preview.png` first. If the check failed, the model stays in the project directory as
-`cutter-rejected.stl` and never reaches `generated/`; don't hand it over; change the
+Look at the printed model preview first. If the check failed, the model stays in the project directory as
+`cutter-rejected.stl` and never reaches `exports/`; don't hand it over; change the
 parameters (most often `--smooth 0.5` or `--no-bridges` plus a manual description of the
 problem helps). Otherwise give the user this report in their language (with `--lang pl` it is
 already Polish): keep the file names and paths exactly as printed, and make them clickable links
@@ -333,39 +341,42 @@ water, not in the dishwasher.
 
 ## Output files
 
-The script owns names and locations; paths are relative to the directory it runs in (the
-user's project), never to the skill installation. `--output-dir DIR` puts `generated/` and
-`.work/` in DIR instead.
+The script owns names and locations; quote its actual paths. The default workspace has two main folders: `exports/` for daily STL batches and `projects/`
+for all cutter sources, previews and settings. It is
+`cookie-forge-output/` relative to the user's current project, never the skill installation.
+`--output-dir DIR` replaces that root. Keep the output root consistent throughout the workflow.
 
-```
-generated/                    ready-to-print STL files only
-├── 2026-12-01/               one folder per build day (local date)
-│   ├── reindeer-100mm.stl    <name>-<size>mm.stl
-│   ├── reindeer-100mm-v2.stl same size, other settings
-│   └── reindeer-80mm.stl     another size of the same cutter
-└── 2026-12-02/
-    └── reindeer-100mm-v3.stl versions count across days
-.work/                        all working files
-└── <name>/                   safe slug of the name: "Mój renifer" -> moj-renifer (not translated)
-    ├── source-original.png   template versions (source-v1.png, ...), reading.png, prepare.png, simplify.png
-    ├── 100mm/                one directory per size and version (100mm-v2 <-> reindeer-100mm-v2.stl)
-    │   ├── preview.png       preview
-    │   ├── source.png        exact copy of the template used (keeps its format: .jpg, .pdf, ...)
-    │   ├── project.json      manifest: options, parameters, results, checks, files (with the STL path)
-    │   ├── notes.md          your notes for the user
-    │   └── dry-run.json      dry-run-preview.png too, after a dry run with --preview-2d
-    └── 100mm-v2/
+```text
+cookie-forge-output/projects/<name>/
+  templates/source-original.png       template history: source-v1.png, ...
+  previews/reading-001.png            numbered reading / preparation / simplification previews
+  previews/100mm-simplify-001.png     another comparison gets 002, not an overwrite
+  previews/100mm-v1-dry-run.png       preview for this version's latest dry run
+  previews/100mm-v1-model.png         final model preview
+  builds/100mm-v1/
+    source.png                       exact template copy (original format retained)
+    project.json                     schema 2, layout 3; relative file references
+    dry-run.json                     approved settings, if a dry run was done
+    notes.md                         your notes for the user
+  builds/100mm-v2/                    changed settings, original retained
 ```
 
-The version of a project directory and of its STL is the same, so the file name tells which
-settings it was built with. Re-running is safe: a dry run only refreshes the dry-run files; a
-build with settings identical to an existing build changes nothing (it reports the existing STL,
-also from an earlier day); a build with other settings goes to a new version (`100mm-v2`,
-`reindeer-100mm-v2.stl`) and leaves the earlier one untouched; `--overwrite` (rebuild in place: the
-STL is written again to today's folder and the old file removed) and `--new-version` (always a new
-copy) are used only when the user asks. Two cutters with the same name in one run get `name` and
-`name-2`. Add `--json` to `build` for a machine-readable result (directories, files with their
-status, warnings, and the summary or report text).
+Printable STL files live only in `cookie-forge-output/exports/<local-build-date>/`, named
+`<name>-<size>mm-vN.stl`. This gives the user one folder for a day's batch. Build manifests
+point to those files with relative paths; never create duplicate copies in `builds/`.
+Hand over the STL link and the daily folder link. Identical models stay under their original
+date; `--overwrite` moves a rebuilt version to today's exports and removes its older STL.
+
+Link previews directly. Reading, preparation and simplification previews are already preserved
+with unique counters; do not make extra copies. Build previews share their build's version.
+Never assume a wildcard path is a real filename: use the path printed by the command.
+The whole workspace is persistent project data. Back it up or move it together; `--from`
+infers the workspace from a schema-2 build's current location, unless `--output-dir` overrides it.
+
+Identical settings with an existing STL are reused; changed settings create a new version.
+A saved build whose STL is missing keeps its version reserved; rebuilding normally creates a
+new version. Use `--overwrite` or `--new-version` only when requested. A failed mesh check
+produces `cutter-rejected.stl` in the build directory, never a file in `exports/`.
 
 ## Skill files
 

@@ -14,6 +14,7 @@
 
 # Generated anywhere: results, helper files, caches
 generated/
+cookie-forge-output/
 .work/
 output/
 *.stl

@@ -1,12 +1,11 @@
 """prepare: a new template version with the inner lines detached from the outline."""
-import os
 
 import numpy as np
 
 from ..errors import fail
 from ..i18n import mm, num, t
 from ..presentation.preview import draw_prepare
-from ..project.layout import PREPARE_FILE, cutter_dir, next_template, record_template, show, slugify
+from ..project.layout import comparison_preview, cutter_dir, next_template, record_template, show, slugify
 from ..template.prepare import apply_cuts, find_cuts
 from ..template.sources import load_sources, mask_from_source
 
@@ -27,7 +26,7 @@ def cmd_prepare(args):
     record_template(work, args.source)                     # the template before the change
     dest = next_template(work, ext)
     image.save(dest, **save_options)
-    preview = os.path.join(work, PREPARE_FILE)
+    preview = comparison_preview(work, "prepare", args.size or 100)
     draw_prepare(z.gray, cut, preview)
     print(t("Prepared template: {path} (new version)", path=show(dest)))
     print(t("Inner lines detached in {n} place(s), gap {gap} at a cookie size of {size} ({px} px).",

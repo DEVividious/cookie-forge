@@ -4,19 +4,17 @@ Usage:
   uv run cookie_forge.py analyze  SOURCES... [--bed 220x220] [--split] [--preview file.png]
   uv run cookie_forge.py build    SOURCES... --size 80 [--bed 220x220] [--name cat] [--dry-run] ...
   uv run cookie_forge.py simplify SOURCES... --size 80 --name cat   (outline simplification variants)
-  uv run cookie_forge.py build --from .work/cat/80mm --simplify-level medium   (change an existing project)
+  uv run cookie_forge.py build --from cookie-forge-output/projects/cat/builds/80mm-v1 --simplify-level medium   (change an existing project)
   uv run cookie_forge.py printers [phrase]
   uv run cookie_forge.py prepare SOURCE --name cat [--size 80] [--gap 1.0]
   uv run cookie_forge.py paths --name cat
 Output language: --lang en (default) or --lang pl.
 
-Results go below ROOT (--output-dir, default: the current directory, i.e. the user's project):
-generated/<date>/<cutter>-<size>mm.stl for every STL that passed the check, and .work/<cutter>/
-for the working files (template versions, reading preview, <size>mm/ with preview.png,
-source.<ext>, project.json and the dry-run files). A dry run writes only the dry-run files. An
-existing build is never replaced silently: identical settings -> nothing is rebuilt, different
-settings -> a new version <size>mm-v2 (<cutter>-<size>mm-v2.stl), --overwrite / --new-version on
-explicit request.
+Results go below --output-dir (default cookie-forge-output/ in the user's project):
+projects/<name>/templates/ for source history, projects/<name>/previews/ for numbered comparisons and build
+previews, and projects/<name>/builds/<size>mm-vN/ for source copies and project.json.
+Printable STL files live only in exports/<date>/<name>-<size>mm-vN.stl (one folder per day).
+Dry runs write no STL. Identical settings reuse a model; changes create another version.
 
 A SOURCE is a PNG/JPG/BMP/WEBP/PDF file. Black (dark) pixels are the shape, white is background.
 In "merge" mode a source may carry a placement: file.png@dx,dy[,size_mm[,rotation_deg]].
@@ -42,6 +40,7 @@ from .commands.simplify import cmd_simplify
 from .config import DEFAULTS, IMPRINT_DEPTH
 from .errors import ForgeError, fail
 from .project.reuse import expand_from
+from .project.layout import DEFAULT_OUTPUT_DIR
 
 
 def main():
@@ -69,13 +68,13 @@ def build_parser():
     sub = ap.add_subparsers(dest="cmd", required=True)
     a = sub.add_parser("analyze", help="read the template(s) and propose sizes")
     add_source_options(a)
-    a.add_argument("--preview", help="PNG with the shape as read; default .work/<name>/reading.png")
+    a.add_argument("--preview", help="PNG with the shape as read; default: a numbered PNG in the cutter previews/ directory")
     a.set_defaults(fn=cmd_analyze)
 
     b = sub.add_parser("build", help="build the STL (or only the summary with --dry-run)")
     add_source_options(b)
     b.add_argument("--dry-run", action="store_true", help="only the project summary and dry-run files, no STL")
-    b.add_argument("--preview-2d", action="store_true", help="with --dry-run also save dry-run-preview.png")
+    b.add_argument("--preview-2d", action="store_true", help="with --dry-run also save a version-named PNG in previews/")
     b.add_argument("--no-3d", action="store_true", help="skip the 3D view in the preview (faster)")
     b.add_argument("--overwrite", action="store_true", help="rebuild in place: replace the identical or latest build of this size")
     b.add_argument("--new-version", action="store_true", help="always write a new version directory (<size>mm-vN)")
@@ -89,7 +88,7 @@ def build_parser():
     pr = sub.add_parser("prepare", help="new template version with inner lines detached from the outline (for an imprint)")
     pr.add_argument("source", metavar="SOURCE", help="PNG/JPG/one-page PDF")
     pr.add_argument("--name", help="cutter name (its directory is a safe slug of it)")
-    pr.add_argument("--output-dir", "--out-dir", dest="output_dir", default=".")
+    pr.add_argument("--output-dir", "--out-dir", dest="output_dir", default=DEFAULT_OUTPUT_DIR)
     pr.add_argument("--size", help="cookie size in mm (longest side) the gap is measured at, or 'original'; default 100")
     pr.add_argument("--gap", type=float, default=1.0, help="gap between the inner lines and the outline in mm; default 1.0")
     pr.add_argument("--threshold", default="auto", help="black threshold 0-255 or auto (Otsu)")
@@ -100,7 +99,7 @@ def build_parser():
 
     pa = sub.add_parser("paths", help="print where the files of a cutter go (JSON)")
     pa.add_argument("--name", required=True)
-    pa.add_argument("--output-dir", "--out-dir", dest="output_dir", default=".")
+    pa.add_argument("--output-dir", "--out-dir", dest="output_dir", default=DEFAULT_OUTPUT_DIR)
     pa.add_argument("--ext", default="png", help="extension of the next template version")
     pa.set_defaults(fn=cmd_paths, lang="en")
 
@@ -127,8 +126,8 @@ def add_source_options(s):
     s.add_argument("--scale", choices=["shared", "separate"], default="shared",
                    help="with --split: shared scale (largest shape = --size) or every shape = --size")
     s.add_argument("--name", help="cutter name (its directory is a safe slug of it)")
-    s.add_argument("--output-dir", "--out-dir", dest="output_dir", default=".",
-                   help="where generated/ (ready STL files) and .work/ (working files) go; default: the current directory")
+    s.add_argument("--output-dir", "--out-dir", dest="output_dir", default=DEFAULT_OUTPUT_DIR,
+                   help="workspace root; default: cookie-forge-output in the current directory")
     s.add_argument("--names", help="comma-separated names of consecutive cutters")
     s.add_argument("--threshold", default="auto", help="black threshold 0-255 or auto (Otsu)")
     s.add_argument("--invert", action="store_true", help="invert: light = shape")
@@ -148,7 +147,7 @@ def add_source_options(s):
                    help="simplify the outline: even out small wiggles and round narrow notches and tips "
                         "(scaled to the cookie size); default none")
     s.add_argument("--from", dest="from_project", metavar="DIR",
-                   help="use the template and settings of an existing project (e.g. .work/cat/80mm); "
+                   help="use the template and settings of an existing project (e.g. cookie-forge-output/projects/cat/builds/80mm-v1); "
                         "options given here change them")
     for key, v in DEFAULTS.items():
         s.add_argument("--" + key.replace("_", "-"), type=float, default=None, help=f"default {v}")

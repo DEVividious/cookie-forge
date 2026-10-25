@@ -2,8 +2,17 @@
 
 ## Unreleased
 
+- Organize `cookie-forge-output/` into `exports/<date>/` for each day's STL batch and
+  `projects/<name>/` for templates, previews and build history. Store each printable STL once.
+- Preserve numbered comparison previews and reference STL files through relative manifest paths.
+  Keep projects editable with `--from` after moving the complete workspace.
+- Improve installation instructions, first-use prompts and the bundled demo for Claude Code
+  and Codex; document PowerShell setup and the limits of native Windows verification.
+- Add an animated reindeer showcase, a still-image alternative and a reproducible renderer.
+
+
 - Made the skill model-agnostic, with host-specific installation and invocation examples in
-  the README and a symlink option for sharing one checkout between compatible agents.
+  the README.
 - Skill commands use an explicitly initialized, quoted skill-directory variable; scripts and
   references resolve from the loaded `SKILL.md`, while output stays in the user's project.
 - Questions and preview inspection use the host's available tools, with conversation fallbacks;

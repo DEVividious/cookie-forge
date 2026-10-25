@@ -9,7 +9,7 @@ from ..geometry.solid import build_solid
 from ..i18n import mm, num, pct, t
 from ..presentation.preview import draw_simplify
 from ..printers import parse_bed
-from ..project.layout import SIMPLIFY_FILE, cutter_dir, show, slugify
+from ..project.layout import comparison_preview, cutter_dir, show, slugify
 from ..project.settings import params_from_args
 from ..template.collect import collect_shapes
 from ..template.shapes import longest_side, transform
@@ -24,7 +24,7 @@ def cmd_simplify(args):
     target = _target_size(args)
     for k in collect_shapes(args):
         variants = simplify_variants(k, p, bed, target)
-        path = os.path.join(cutter_dir(args.output_dir, slugify(k.name)), SIMPLIFY_FILE)
+        path = comparison_preview(cutter_dir(args.output_dir, slugify(k.name)), "simplify", args.size)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         draw_simplify(k.name, variants, path)
         print(simplify_md(k.name, variants, path) + "\n")

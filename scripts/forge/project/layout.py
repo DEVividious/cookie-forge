@@ -1,9 +1,4 @@
-"""Output layout below ROOT (the current directory unless --output-dir):
-  generated/<date>/<slug>-<size>mm[-vN].stl   every STL that passed the check, ready to print
-  .work/<slug>/                               template history, reading and prepare previews
-  .work/<slug>/<size>mm[-vN]/                 preview, template copy, manifest, dry-run files
-The version of a size directory and of its STL is the same, so a file name points at its settings.
-Paths are resolved against the current directory (the user's project), never this package's."""
+"""Visible, portable workspace: ROOT/projects/<slug>/{templates,previews,builds/<size>mm-vN}."""
 import datetime
 import hashlib
 import json
@@ -13,16 +8,10 @@ import shutil
 import unicodedata
 
 
-GENERATED_DIR = "generated"
-WORK_DIR = ".work"
+DEFAULT_OUTPUT_DIR = "cookie-forge-output"
 REJECTED_STL_FILE = "cutter-rejected.stl"
-PREVIEW_FILE = "preview.png"
 MANIFEST_FILE = "project.json"
 DRY_RUN_FILE = "dry-run.json"
-DRY_RUN_PREVIEW_FILE = "dry-run-preview.png"
-READING_FILE = "reading.png"
-PREPARE_FILE = "prepare.png"
-SIMPLIFY_FILE = "simplify.png"
 RESERVED_NAMES = {"con", "prn", "aux", "nul"} | {f"{d}{i}" for d in ("com", "lpt") for i in range(1, 10)}
 
 
@@ -50,7 +39,7 @@ def show(path, is_dir=False):
 def portable(path):
     """Path to store in a manifest: relative to the current directory, or just the file name."""
     a, cwd = os.path.abspath(path), os.getcwd()
-    return os.path.relpath(a, cwd) if a.startswith(cwd + os.sep) else os.path.basename(a)
+    return (os.path.relpath(a, cwd) if a.startswith(cwd + os.sep) else os.path.basename(a)).replace(os.sep, "/")
 
 
 def sha256_file(path):
@@ -70,14 +59,39 @@ def write_json(path, data):
 
 
 def cutter_dir(root, slug):
-    """Working directory of one cutter: ROOT/.work/<slug>/."""
-    return os.path.join(root, WORK_DIR, slug)
+    """Directory of one cutter, relative to the chosen workspace root."""
+    return os.path.join(root, "projects", slug)
 
 
 def stl_path(root, slug, out_dir, day=None):
-    """The STL of the build in out_dir: ROOT/generated/<date>/<slug>-<size>mm[-vN].stl."""
+    """The single printable STL, grouped with all other builds of that local day."""
     day = day or datetime.date.today().isoformat()
-    return os.path.join(root, GENERATED_DIR, day, f"{slug}-{os.path.basename(os.path.normpath(out_dir))}.stl")
+    version = os.path.basename(os.path.normpath(out_dir))
+    return os.path.join(root, "exports", day, f"{slug}-{version}.stl")
+
+
+def build_preview(out_dir, kind="model"):
+    """Canonical preview tied to a build version, outside the build directory."""
+    cutter = os.path.dirname(os.path.dirname(out_dir))
+    path = os.path.join(cutter, "previews", f"{os.path.basename(out_dir)}-{kind}.png")
+    return path
+
+
+def comparison_preview(cutter, kind, size=None):
+    """Reserve a unique preview filename so repeated comparisons never replace each other."""
+    directory = os.path.join(cutter, "previews")
+    os.makedirs(directory, exist_ok=True)
+    label = slugify(str(size)) + "mm-" if size and size != "original" else ""
+    for index in range(1, 1000000):
+        path = os.path.join(directory, f"{label}{kind}-{index:03d}.png")
+        try:
+            with open(path, "xb"):
+                pass
+            return path
+        except FileExistsError:
+            continue
+    raise RuntimeError("Preview counter exhausted")
+
 
 
 def size_versions(cutter_dir, size_txt):
@@ -94,7 +108,7 @@ def size_versions(cutter_dir, size_txt):
 def manifest_stl(d, m):
     """Path of the STL a manifest in d refers to (stored relative to d), or None."""
     rel = next((f["path"] for f in m.get("files", []) if f.get("role") == "stl"), None)
-    return os.path.normpath(os.path.join(d, rel)) if rel else None
+    return os.path.normpath(os.path.join(d, rel.replace("\\", "/"))) if rel else None
 
 
 def built_manifest(d):
@@ -119,6 +133,7 @@ def choose_target(cutter_dir, size_txt, fingerprint, overwrite=False, new_versio
     overwrite   - replace that identical build, or else the latest build of this size
     new         - first build of this size
     new_version - builds with other settings exist and stay untouched; use the next version dir"""
+    cutter_dir = os.path.join(cutter_dir, "builds")
     versions = size_versions(cutter_dir, size_txt)
     built = [(d, m) for _, d in versions if (m := built_manifest(d))]
     same = [d for d, m in built if m.get("fingerprint") == fingerprint]
@@ -132,28 +147,30 @@ def choose_target(cutter_dir, size_txt, fingerprint, overwrite=False, new_versio
     else:
         v = versions[-1][0] + 1 if versions else 1
         while True:                             # a foreign file may hold the STL name of today
-            target = os.path.join(cutter_dir, f"{size_txt}mm" if v == 1 else f"{size_txt}mm-v{v}")
+            target = os.path.join(cutter_dir, f"{size_txt}mm-v{v}")
             if is_free(target, stl_for(target)):
                 break
             v += 1
-    return target, "new_version" if built else "new"
+    has_history = any(os.path.exists(os.path.join(d, MANIFEST_FILE)) for _, d in versions)
+    return target, "new_version" if has_history else "new"
 
 
 def planned_files(pr, preview_2d):
     """Files of a dry run: the results a build would write and the dry-run files written now."""
     status = dict(new="planned", new_version="planned", identical="exists", overwrite="overwrite")[pr.decision]
     d = pr.out_dir
-    files = [(pr.stl_path, "stl", status), (os.path.join(d, PREVIEW_FILE), "preview", status)]
+    files = [(pr.stl_path, "stl", status), (build_preview(d), "preview", status)]
     files += [(os.path.join(d, r["file"]), r["role"], status) for _, r in pr.sources]
     files.append((os.path.join(d, MANIFEST_FILE), "manifest", status))
     files.append((os.path.join(d, DRY_RUN_FILE), "dry_run", "created"))
     if preview_2d:
-        files.append((os.path.join(d, DRY_RUN_PREVIEW_FILE), "dry_run_preview", "created"))
+        files.append((build_preview(d, "dry-run"), "dry_run_preview", "created"))
     return files
 
 
 def template_versions(work):
     """Recorded template versions in a work dir as [(index, path)]: source-original = 0, source-vN = N."""
+    work = os.path.join(work, "templates")
     found = []
     if os.path.isdir(work):
         for n in os.listdir(work):
@@ -166,8 +183,8 @@ def template_versions(work):
 def next_template(work, ext=".png"):
     versions = template_versions(work)
     if not versions:
-        return os.path.join(work, f"source-original{ext}")
-    return os.path.join(work, f"source-v{versions[-1][0] + 1}{ext}")
+        return os.path.join(work, "templates", f"source-original{ext}")
+    return os.path.join(work, "templates", f"source-v{versions[-1][0] + 1}{ext}")
 
 
 def record_template(work, path):
@@ -176,7 +193,7 @@ def record_template(work, path):
     for _, v in template_versions(work):
         if sha256_file(v) == h:
             return v, False
-    os.makedirs(work, exist_ok=True)
+    os.makedirs(os.path.join(work, "templates"), exist_ok=True)
     dest = next_template(work, os.path.splitext(path)[1].lower() or ".png")
     shutil.copyfile(path, dest)
     return dest, True

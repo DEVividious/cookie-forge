@@ -64,13 +64,13 @@ class DryRunSummary(unittest.TestCase):
         self.assertAlmostEqual(px * res, eff, delta=0.05)
 
     def test_planned_and_created_files_are_distinguished(self):
-        d = ".work/man/100mm/"
-        stl = f"generated/{datetime.date.today().isoformat()}/man-100mm.stl"
-        for f in (stl, d + "preview.png", d + "source.png", d + "project.json"):
+        d = "cookie-forge-output/projects/man/builds/100mm-v1/"
+        stl = f"cookie-forge-output/exports/{datetime.date.today().isoformat()}/man-100mm-v1.stl"
+        for f in (stl, "cookie-forge-output/projects/man/previews/100mm-v1-model.png", d + "source.png", d + "project.json"):
             self.assertIn("will be created after approval", row(self.en, f"`{f}`"))
-        for f in ("dry-run.json", "dry-run-preview.png"):
-            self.assertIn("created by this dry run", row(self.en, f"`{d}{f}`"))
-        self.assertIn("`.work/man/100mm/` (new project directory)", row(self.en, "Project directory"))
+        for f in (d + "dry-run.json", "cookie-forge-output/projects/man/previews/100mm-v1-dry-run.png"):
+            self.assertIn("created by this dry run", row(self.en, f"`{f}`"))
+        self.assertIn("`cookie-forge-output/projects/man/builds/100mm-v1/` (new project directory)", row(self.en, "Project directory"))
 
     def test_warnings_and_fixes_are_separate(self):
         block = self.en.split("### Warnings and automatic fixes")[1].split("### Planned files")[0]

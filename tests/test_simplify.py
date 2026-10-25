@@ -25,8 +25,20 @@ class Variants(unittest.TestCase):
         self.assertIn(": offer simplification", out)
         rows = re.findall(r"^\| (no simplification|light|medium|strong)\b", out, flags=re.M)
         self.assertEqual(rows, ["no simplification", "light", "medium", "strong"])
-        self.assertTrue(os.path.exists(os.path.join(proj, ".work/man/simplify.png")))
+        self.assertTrue(os.path.exists(os.path.join(proj, "cookie-forge-output/projects/man/previews/80mm-simplify-001.png")))
         self.assertFalse(os.path.exists(os.path.join(proj, "generated")))
+
+    def test_repeated_comparisons_keep_previous_preview(self):
+        proj = project("star.png")
+        run("simplify", "star.png", "--size", "60", cwd=proj)
+        first = os.path.join(proj, "cookie-forge-output/projects/star/previews/60mm-simplify-001.png")
+        with open(first, "rb") as f:
+            original = f.read()
+        run("simplify", "star.png", "--size", "60", cwd=proj)
+        with open(first, "rb") as f:
+            self.assertEqual(f.read(), original)
+        self.assertTrue(os.path.isfile(os.path.join(proj,
+            "cookie-forge-output/projects/star/previews/60mm-simplify-002.png")))
 
     def test_simple_outline_is_not_offered(self):
         proj = project("star.png")
@@ -53,10 +65,10 @@ class Build(unittest.TestCase):
         self.assertEqual(run_json(*base, "--simplify-level", "none", cwd=proj)["cutters"][0]["decision"], "identical")
         medium = run(*base, "--simplify-level", "medium", "--dry-run", cwd=proj)
         self.assertRegex(medium, r"\| Outline simplification level \| medium: wiggles averaged over [\d.]+ mm")
-        self.assertIn(".work/man/80mm-v2/", medium)
+        self.assertIn("cookie-forge-output/projects/man/builds/80mm-v2/", medium)
         self.assertGreater(notch(medium), notch(plain))
         run(*base, "--simplify-level", "medium", cwd=proj)
-        self.assertEqual(manifest(proj, ".work/man/80mm-v2")["result"]["simplification"]["level"], "medium")
+        self.assertEqual(manifest(proj, "cookie-forge-output/projects/man/builds/80mm-v2")["result"]["simplification"]["level"], "medium")
 
 
 class FromProject(unittest.TestCase):
@@ -64,15 +76,15 @@ class FromProject(unittest.TestCase):
         proj = project("gingerbread.png")
         run("build", "gingerbread.png", "--size", "80", "--name", "man", "--bed", "K1C", "--no-3d", cwd=proj)
         os.remove(os.path.join(proj, "gingerbread.png"))            # the copy in the project is enough
-        out = run("simplify", "--from", ".work/man/80mm", cwd=proj)
+        out = run("simplify", "--from", "cookie-forge-output/projects/man/builds/80mm-v1", cwd=proj)
         self.assertIn("## Outline simplification: man", out)
-        res = run_json("build", "--from", ".work/man/80mm", "--simplify-level", "light", cwd=proj)["cutters"][0]
-        self.assertEqual(res["dir"], ".work/man/80mm-v2/")
-        m = manifest(proj, ".work/man/80mm-v2")
+        res = run_json("build", "--from", "cookie-forge-output/projects/man/builds/80mm-v1", "--simplify-level", "light", cwd=proj)["cutters"][0]
+        self.assertEqual(res["dir"], "cookie-forge-output/projects/man/builds/80mm-v2/")
+        m = manifest(proj, "cookie-forge-output/projects/man/builds/80mm-v2")
         self.assertEqual(m["printer"]["name"], "Creality K1C")
         self.assertEqual(m["options"]["simplify_level"], "light")
         self.assertIn("--simplify-level", m["build_args"])
-        self.assertEqual(m["sources"][0]["original"], ".work/man/80mm/source.png")
+        self.assertEqual(m["sources"][0]["original"], "cookie-forge-output/projects/man/builds/80mm-v1/source.png")
 
 
 if __name__ == "__main__":

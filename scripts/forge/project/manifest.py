@@ -1,4 +1,4 @@
-"""project.json and .work/dry-run.json: what a project is made of, its identity and results."""
+"""project.json and dry-run.json: what a project is made of, its identity and results."""
 import hashlib
 import json
 import os
@@ -13,7 +13,7 @@ from ..template.shapes import outline_counts
 from .layout import portable, sha256_file
 
 
-MANIFEST_SCHEMA = 1
+MANIFEST_SCHEMA = 2
 
 
 def source_records(k):
@@ -64,7 +64,7 @@ def fingerprint(sources, options, p, bed):
 
 
 def manifest(pr, stage, options, extra=None):
-    """project.json (stage built) and .work/dry-run.json (stage dry-run). Paths are relative to the
+    """project.json (stage built) and dry-run.json (stage dry-run). Paths are relative to the
     project directory; `original` paths are relative to the directory the generator ran from."""
     p, k = pr.p, pr.shape
     lin, area = bed_share(pr)
@@ -72,7 +72,7 @@ def manifest(pr, stage, options, extra=None):
     with english():
         warnings, fixes = [str(m) for m in pr.warnings], [str(m) for m in pr.fixes]
     m = dict(
-        schema="cookie-forge/project", schema_version=MANIFEST_SCHEMA,
+        schema="cookie-forge/project", schema_version=MANIFEST_SCHEMA, layout_version=3,
         generator=dict(name="cookie-forge", version=VERSION),
         id=pr.slug, name=k.name, stage=stage, updated=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         fingerprint=pr.fingerprint,
@@ -98,7 +98,7 @@ def manifest(pr, stage, options, extra=None):
                         fits_bed=pr.fits, fits_height=pr.fits_height, outlines=n_out, through_holes=n_holes),
         ),
         warnings=warnings, fixes=fixes,
-        files=[dict(path=os.path.relpath(path, pr.out_dir), role=role, status=status) for path, role, status in pr.files],
+        files=[dict(path=os.path.relpath(path, pr.out_dir).replace(os.sep, "/"), role=role, status=status) for path, role, status in pr.files],
     )
     m.update(extra or {})
     return m
