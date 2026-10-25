@@ -5,8 +5,8 @@
 """Render the README animation and gallery from the actual example STLs, without changing a mesh.
 
 Run from any directory: uv run /path/to/scripts/render_showcase.py
-Writes examples/showcase.gif, examples/showcase.png and examples/gallery-<example>.png.
-No display or GPU needed.
+Writes examples/showcase.gif, examples/showcase.png, examples/gallery-<example>.png and the
+plugin icon, plugins/cookie-forge/.claude-plugin/icon.png. No display or GPU needed.
 """
 from pathlib import Path
 
@@ -64,6 +64,18 @@ def render_gallery(root, name):
     print(path)
 
 
+def render_icon(root):
+    """Square directory icon: the reindeer cutter seen from above, legible at small sizes."""
+    fig = plt.figure(figsize=(10.24, 10.24), dpi=100, facecolor=BACKGROUND)
+    ax = fig.add_axes((0, 0, 1, 1), projection="3d", facecolor=BACKGROUND)
+    draw_mesh(ax, trimesh.load_mesh(root / "examples/reindeer/100mm/cutter.stl"), zoom=1.7)
+    ax.view_init(elev=89, azim=-90)
+    path = root / "plugins/cookie-forge/.claude-plugin/icon.png"
+    fig.savefig(path, facecolor=BACKGROUND)
+    plt.close(fig)
+    print(path)
+
+
 def main():
     root = Path(__file__).resolve().parents[1]
     example = root / "examples/reindeer/100mm"
@@ -98,6 +110,7 @@ def main():
     print(root / "examples/showcase.gif")
     for name in GALLERY:
         render_gallery(root, name)
+    render_icon(root)
 
 
 if __name__ == "__main__":

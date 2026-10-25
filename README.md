@@ -419,8 +419,8 @@ The tests run the script with `uv run` on the simple templates in `tests/fixture
 `make_fixtures.py`); a full run takes about 1–2 minutes, depending on the machine and cached
 dependencies.
 
-Run `uv run scripts/render_showcase.py` to regenerate the README animation, its still image and
-the gallery from the example STL files. It renders the actual meshes without altering them.
+Run `uv run scripts/render_showcase.py` to regenerate the README animation, its still image, the
+gallery and the plugin icon from the example STL files. It renders the actual meshes without altering them.
 
 To try your working copy, start Claude Code with `claude --plugin-dir plugins/cookie-forge`.
 Before you push, run `claude plugin validate .` for the marketplace and
@@ -443,8 +443,8 @@ that version changes, and a test checks that both match.
 - `.claude-plugin/marketplace.json`: makes this repository a marketplace that lists the plugin,
   so Claude Code and Codex can install it straight from GitHub.
 - `plugins/cookie-forge/`: the plugin, the only folder an install copies. It holds
-  `.claude-plugin/plugin.json`, a short `README.md`, a copy of `LICENSE` and the skill in
-  `skills/cookie-forge/`.
+  `.claude-plugin/plugin.json` with the directory icon, a short `README.md`, a copy of `LICENSE`
+  and the skill in `skills/cookie-forge/`.
 - `plugins/cookie-forge/skills/cookie-forge/SKILL.md`: the model- and host-independent conversation flow.
 - `plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py`: the command-line entry point (`--help` lists
   everything), with `cookie_forge.py.lock` pinning its libraries; the code is in the `forge/`
@@ -464,7 +464,8 @@ that version changes, and a test checks that both match.
   (the tests fail on a missing one). Library code raises `ForgeError` and never exits.
 - `plugins/cookie-forge/skills/cookie-forge/references/`: `geometry.md`, `templates.md` and `printers.md`: profile
   standard, template tips and image-model prompts, printer bed table.
-- `scripts/render_showcase.py`: renders the README animation and gallery from the example STLs.
+- `scripts/render_showcase.py`: renders the README animation, gallery and plugin icon from the
+  example STLs.
 - `examples/`: results of the whole skill, five cutters from three templates (see
   [Real results](#real-results)), plus the README showcase and gallery images.
 - `tests/`: end-to-end tests of the summary, output layout, versions and manifests;
