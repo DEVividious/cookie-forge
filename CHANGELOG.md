@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.1
+
+- A missing uv is answered with a link to uv's installation guide instead of a `curl | sh`
+  install command, which Anthropic's plugin directory scan flagged as download-and-run.
+- The skill-directory variable in `SKILL.md` is renamed to `FORGE_SKILL_DIR`.
+- Add a plugin icon for the directory listing, rendered from the reindeer STL by
+  `render_showcase.py`.
+
 ## 1.4.0
 
 - Organize `cookie-forge-output/` into `exports/<date>/` for each day's STL batch and
