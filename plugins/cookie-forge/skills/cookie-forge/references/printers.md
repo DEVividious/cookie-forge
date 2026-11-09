@@ -5,6 +5,11 @@ Dimensions are the build volume X × Y × Z in mm (width × depth × height). Th
 using the same row format. If a printer is not listed, ask the user for the bed size (it is in
 the manual or in the printer profile of their slicer) or look it up online.
 
+Printers the user owns are kept apart from this table, in their own file
+(`${XDG_CONFIG_HOME:-~/.config}/cookie-forge/printers.md`, or the path in `$COOKIE_FORGE_PRINTERS`),
+managed with `printers --mine`, `--add` and `--remove`. It uses the same rows; the size may stay
+empty for a printer from this table.
+
 The cutter has to fit in the area reduced by a margin (10 mm on each side by default): the bed
 is often less level near the edges, the brim starts there, and glass clips or sensors often
 take up a strip of the bed.

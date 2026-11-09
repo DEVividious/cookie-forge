@@ -248,6 +248,15 @@ PL = {
     "Maker": "Producent",
     "Model": "Model",
     "Bed X × Y × Z (mm)": "Stół X × Y × Z (mm)",
+    "Notes": "Uwagi",
+    "Your printers ({path}):": "Twoje drukarki ({path}):",
+    "No saved printers yet ({path}).": "Nie masz jeszcze zapisanych drukarek ({path}).",
+    "Bed size unknown for {printer}: add it to the file as width × depth × height in mm.":
+        "Brak wymiarów stołu dla {printer}: dopisz je w pliku jako szerokość × głębokość × wysokość w mm.",
+    "Added {printer} to your printers ({path}).": "Dodano {printer} do Twoich drukarek ({path}).",
+    "Updated {printer} in your printers ({path}).": "Zaktualizowano {printer} w Twoich drukarkach ({path}).",
+    "{printer} is already in your printers ({path}).": "{printer} jest już w Twoich drukarkach ({path}).",
+    "Removed {printer} from your printers ({path}).": "Usunięto {printer} z Twoich drukarek ({path}).",
     # previews
     "cookie {w} × {h} mm, with flange {fw} × {fh} mm": "ciastko {w} × {h} mm, z kołnierzem {fw} × {fh} mm",
     "{lin} of the longer bed side, {area} of the bed area (bed {x} × {y} mm)":

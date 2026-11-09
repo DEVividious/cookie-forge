@@ -219,6 +219,31 @@ After you approve, the agent links `reindeer-100mm-v1.stl` (saved in
 supports. To iterate, just ask: *"Make the same cutter 80 mm"* or *"Simplify this outline and
 show me the variants."*
 
+## Your printers
+
+The skill can remember the printers you own, so it offers them as a choice instead of asking
+every time. Tell the agent once, for example *"Add my default printers: Creality K1C and Bambu
+Lab P2S with AMS 2 Pro"*, and it saves them. With one saved printer it just confirms it; with
+several it asks which one the cutter is for.
+
+The list is a plain markdown file, `~/.config/cookie-forge/printers.md` (under
+`$XDG_CONFIG_HOME` if set, or wherever `COOKIE_FORGE_PRINTERS` points). It lives outside the
+plugin folder because a plugin update replaces that folder. Rows use the format of the
+[bed table](plugins/cookie-forge/skills/cookie-forge/references/printers.md); leave the size
+empty for a printer from that table and give it for any other:
+
+```markdown
+| Maker | Model | X × Y × Z | Notes |
+|---|---|---|---|
+| Creality | K1C | 220 × 220 × 250 | |
+| Bambu Lab | P2S | | AMS 2 Pro |
+| Homebrew | CoreXY 300 | 300 × 300 × 320 | my own build |
+```
+
+From the command line: `printers --mine` lists them, `printers --add "Bambu Lab P2S" --note "AMS 2 Pro"`
+adds one (`--bed 350x350x340` for a printer not in the table) and `printers --remove "K1C"`
+removes it. `--bed "P2S"` finds your saved printers first.
+
 ## Try it without an agent
 
 Run the geometry engine directly on the bundled reindeer. From a scratch folder, these commands
@@ -294,6 +319,8 @@ current directory, not the script's location.
 
 ```bash
 uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py printers "k1c"                                  # printer bed
+uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py printers --add "Bambu Lab P2S" --note "AMS 2 Pro" # save your printer
+uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py printers --mine                                 # your saved printers
 uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py analyze cat.png --bed K1C --name cat           # reading + sizes
 uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py build cat.png --size 80 --bed K1C --name cat --dry-run --preview-2d
 uv run plugins/cookie-forge/skills/cookie-forge/scripts/cookie_forge.py build cat.png --size 80 --bed K1C --name cat --dry-run --details  # full summary
@@ -454,7 +481,8 @@ that version changes, and a test checks that both match.
   forge/project/        output layout and versions, manifest, settings from the command line
   forge/geometry/       2D outline, blade profile, cutter design, 3D solid and STL
   forge/template/       loading templates, contours -> shapes, collecting sources, prepare
-  forge/printers.py, config.py, i18n.py (+ locale_pl.py), errors.py: shared basics
+  forge/printers/       built-in bed table, your printers file, --bed
+  forge/config.py, i18n.py (+ locale_pl.py), errors.py: shared basics
   ```
 
   User-facing text goes through `i18n.t()` / `Msg`; add the Polish version to `locale_pl.py`

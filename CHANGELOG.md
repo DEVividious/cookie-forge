@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.0
+
+- Save the printers you own in `~/.config/cookie-forge/printers.md` (or `$XDG_CONFIG_HOME`,
+  or the path in `COOKIE_FORGE_PRINTERS`), outside the plugin folder so updates keep it.
+  `printers --mine` lists them, `printers --add NAME [--note TEXT] [--bed WxDxH]` adds or
+  updates one and `printers --remove NAME` removes one. Rows use the format of
+  `references/printers.md`; the size may stay empty for a printer from that table.
+- `--bed "name"` and `printers phrase` look in your printers first. An exact model name now
+  wins over longer ones, so `--bed K1` is the Creality K1 instead of an ambiguous match.
+- In step 2 the skill offers your saved printers as a choice (or confirms the only one), and
+  offers to save a printer you name that is not on the list.
+
 ## 1.5.0
 
 - A dry run prints a short approval card by default: cookie size and footprint, bed usage,

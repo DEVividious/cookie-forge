@@ -6,6 +6,7 @@ Usage:
   uv run cookie_forge.py simplify SOURCES... --size 80 --name cat   (outline simplification variants)
   uv run cookie_forge.py build --from cookie-forge-output/projects/cat/builds/80mm-v1 --simplify-level medium   (change an existing project)
   uv run cookie_forge.py printers [phrase]
+  uv run cookie_forge.py printers --mine | --add "Bambu Lab P2S" [--note "AMS 2 Pro"] | --remove NAME
   uv run cookie_forge.py prepare SOURCE --name cat [--size 80] [--gap 1.0]
   uv run cookie_forge.py paths --name cat
 Output language: --lang en (default) or --lang pl.
@@ -105,8 +106,15 @@ def build_parser():
     pa.add_argument("--ext", default="png", help="extension of the next template version")
     pa.set_defaults(fn=cmd_paths, lang="en")
 
-    d = sub.add_parser("printers", help="look up a printer and its bed size")
-    d.add_argument("phrase", nargs="*")
+    d = sub.add_parser("printers", help="look up a printer and its bed size; list, add or remove your own printers")
+    d.add_argument("phrase", nargs="*", help="search the user's printers and the built-in table")
+    mine = d.add_mutually_exclusive_group()
+    mine.add_argument("--mine", action="store_true",
+                      help="list your saved printers (file: $COOKIE_FORGE_PRINTERS or ~/.config/cookie-forge/printers.md)")
+    mine.add_argument("--add", metavar="NAME", help="save a printer, e.g. 'Bambu Lab P2S'; again to change its note")
+    mine.add_argument("--remove", metavar="NAME", help="remove a saved printer")
+    d.add_argument("--note", help="with --add: free text such as 'AMS 2 Pro'")
+    d.add_argument("--bed", metavar="WxD[xH]", help="with --add: bed size in mm for a printer not in the table")
     add_lang(d)
     d.set_defaults(fn=cmd_printers)
     return ap
@@ -160,6 +168,10 @@ def check_args(args):
     """Checks across options that argparse cannot express."""
     if getattr(args, "overwrite", False) and args.new_version:
         fail("use either --overwrite or --new-version")
+    if args.cmd == "printers" and (args.note is not None or args.bed) and not args.add:
+        fail("--note and --bed go with --add")
+    if args.cmd == "printers" and args.phrase and (args.mine or args.add or args.remove):
+        fail("give either a search phrase or --mine / --add / --remove")
     if args.cmd in ("analyze", "build", "simplify", "prepare") and args.size not in (None, "original"):
         try:
             float(args.size)

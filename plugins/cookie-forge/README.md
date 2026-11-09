@@ -28,6 +28,14 @@ The skill runs one bundled Python script, `skills/cookie-forge/scripts/cookie_fo
 you point it at and writes its results to `cookie-forge-output/` in your current project. It
 makes no network requests of its own, sends no data anywhere and needs no API key.
 
+## Your printers
+
+Ask the agent to remember your printers ("add my default printers: Creality K1C, Bambu Lab P2S
+with AMS 2 Pro") and it offers them as a choice for each new cutter. They are saved in
+`~/.config/cookie-forge/printers.md` (under `$XDG_CONFIG_HOME` if set, or at the path in
+`COOKIE_FORGE_PRINTERS`), outside this folder, so plugin updates keep them. It is a markdown
+table you can edit by hand, in the format of `skills/cookie-forge/references/printers.md`.
+
 ## Requirements
 
 Python 3.10 or later and [uv](https://docs.astral.sh/uv/). Native Windows is not yet verified

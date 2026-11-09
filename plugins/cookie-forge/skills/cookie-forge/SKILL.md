@@ -1,6 +1,6 @@
 ---
 name: cookie-forge
-description: Create or revise 3D-printable cookie cutters from images, drawings or PDF templates, with an optional imprint. Guides template reading, printer fit, sizing, simplification, preview approval and STL generation. Use for cookie, gingerbread or fondant cutters (including Polish "foremka" and "wykrawacz") and edits to cutters made with this skill.
+description: Create or revise 3D-printable cookie cutters from images, drawings or PDF templates, with an optional imprint. Guides template reading, printer fit, sizing, simplification, preview approval and STL generation. Use for cookie, gingerbread or fondant cutters (including Polish "foremka" and "wykrawacz"), edits to cutters made with this skill, and saving the user's printers for it.
 ---
 
 # cookie-forge: a cookie cutter from an image
@@ -131,7 +131,17 @@ open arc, so show both images to the user before going on.
 
 ### 2. Printer
 
-Ask which printer they have. Bed sizes come from `references/printers.md`:
+If the user already named the printer, use it. Otherwise start with their saved printers:
+
+```bash
+uv run --locked "${FORGE_SKILL_DIR}/scripts/cookie_forge.py" printers --mine
+```
+
+- One printer: confirm it in one line ("For your Bambu Lab P2S?").
+- Several: ask which one this cutter is for, as a choice with one option per printer (put the
+  notes, e.g. "AMS 2 Pro", in the option description).
+- None, or the user wants another: ask which printer they have and look up its bed in
+  `references/printers.md`:
 
 ```bash
 uv run --locked "${FORGE_SKILL_DIR}/scripts/cookie_forge.py" printers "ender 3"
@@ -139,7 +149,16 @@ uv run --locked "${FORGE_SKILL_DIR}/scripts/cookie_forge.py" printers "ender 3"
 
 If the printer is not on the list, ask for the bed size (width × depth in mm; it is in the
 manual or in the printer profile of the slicer) or look it up online and confirm with the user.
-Then use `--bed "name"` or `--bed 220x220`.
+Then use `--bed "Maker Model"` as printed or `--bed 220x220`. When the printer the user named
+is not saved yet, offer once to save it for next time:
+`printers --add "Bambu Lab P2S" [--note "AMS 2 Pro"]`, plus `--bed 350x350x340` for a
+printer that is not in the table.
+
+The user can also manage the list without making a cutter ("add my default printers: K1C,
+P2S with AMS 2 Pro"): run `printers --add` for each (or `--remove "name"`), then show
+`printers --mine`. The list lives outside the plugin
+(`${XDG_CONFIG_HOME:-~/.config}/cookie-forge/printers.md`, or `$COOKIE_FORGE_PRINTERS`), so
+plugin updates keep it; the user may edit it by hand.
 
 ### 3. Size
 
@@ -363,4 +382,5 @@ produces `cutter-rejected.stl` in the build directory, never a file in `exports/
   settings. Read it when the user asks "why" or wants to change something.
 - `references/templates.md`: how to get a good template, prompts for image models, typical
   reading problems.
-- `references/printers.md`: bed table; add new printers in the same row format.
+- `references/printers.md`: bed table; add new printers in the same row format. The user's own
+  printers go to their printers file with `printers --add`, never into this table.
