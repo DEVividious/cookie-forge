@@ -9,7 +9,7 @@ Needs Blender 4.2 or later on PATH (or --blender /path/to/blender); a GPU is use
 Writes examples/gallery.webp and nothing else.
 
 Blender renders one studio picture from the example STLs as they are (gallery_scene.py: the
-studio, plastic and lights of the cutter that ends examples/showcase.gif). This script frames it
+studio, plastic and lights of the cutter that ends examples/showcase.webp). This script frames it
 in a dark card with labels, in the look of that clip, so it sits well on light and dark pages.
 """
 import argparse

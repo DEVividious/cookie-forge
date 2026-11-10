@@ -2,7 +2,7 @@
 
 **Turn a drawing into a 3D-printable cookie cutter. Just ask your coding agent.**
 
-![A cookie-forge session: a one-line prompt turns a gingerbread man drawing into an approval card, a checked STL and a 3D-rendered cookie cutter.](examples/showcase.gif)
+![A cookie-forge session: a one-line prompt turns a gingerbread man drawing into an approval card, a checked STL and a 3D-rendered cookie cutter.](examples/showcase.webp)
 
 Attach a picture, approve the preview, print the STL. No CAD.
 Works in Claude Code, Codex and other agents that run `SKILL.md` skills.

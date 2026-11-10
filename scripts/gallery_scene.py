@@ -1,6 +1,6 @@
 """Blender scene for the README gallery: one row per drawing, with the drawing on a sheet of
 paper, its outline-only cutter and its imprint cutter, in the same studio as the cutter that ends
-examples/showcase.gif.
+examples/showcase.webp.
 
 Run by render_gallery.py, not by hand:
 blender -b --factory-startup -P gallery_scene.py -- <job.json>

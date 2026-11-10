@@ -13,7 +13,7 @@ Warnings:
 
 ## The conversation
 
-Made in one short Claude Code session (the README's `showcase.gif` replays it):
+Made in one short Claude Code session (the README's `showcase.webp` replays it):
 
 1. "/cookie-forge Make a cutter from gingerbread-man.png, 140 x 97 mm, outline only."
 2. The skill showed its reading of the template and asked which of the two saved printers to use: "Bambu Lab P2S."

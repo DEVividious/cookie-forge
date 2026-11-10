@@ -31,11 +31,12 @@ that version changes, and a test checks that both match.
 
 ## README images
 
-- **Hero:** `examples/showcase.gif` and its still, `examples/showcase.png`, are made with
+- **Hero:** `examples/showcase.webp` and its still, `examples/showcase.png`, are made with
   ReplayViz from a real Claude Code session, the one that built
   [`examples/gingerbread-man/140mm/`](../examples/gingerbread-man/140mm/) (its `notes.md` has the
   conversation). They are not rendered by a script in this repository. The README shows only the
-  GIF; the still is for places that cannot play it.
+  animation (an animated WebP, about a quarter of a GIF's size); the still is for places that
+  cannot play it.
 - **Gallery:** `examples/gallery.webp` is rendered from the actual example meshes, without
   altering them:
 
