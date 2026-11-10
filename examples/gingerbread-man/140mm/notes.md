@@ -29,7 +29,7 @@ Made in one short Claude Code session (the README's `showcase.gif` replays it):
 ## Command
 
 ```bash
-uv run --locked scripts/cookie_forge.py build gingerbread-man.png --size 140 --bed P2S --name gingerbread-man
+uv run --locked scripts/cookie_forge.py build gingerbread-man.png --size 140 --bed 'Bambu Lab P2S' --name gingerbread-man
 ```
 
 ## Printing

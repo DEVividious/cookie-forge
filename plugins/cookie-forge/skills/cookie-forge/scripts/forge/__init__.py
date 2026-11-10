@@ -10,4 +10,4 @@ Subdomains (dependencies only point downwards in this list):
   config, i18n, errors: shared basics"""
 
 
-VERSION = "1.6.1"
+VERSION = "1.7.0"

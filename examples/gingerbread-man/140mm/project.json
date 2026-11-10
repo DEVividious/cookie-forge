@@ -4,12 +4,12 @@
   "layout_version": 3,
   "generator": {
     "name": "cookie-forge",
-    "version": "1.6.0"
+    "version": "1.7.0"
   },
   "id": "gingerbread-man",
   "name": "gingerbread-man",
   "stage": "built",
-  "updated": "2026-11-10T12:15:18+0100",
+  "updated": "2026-11-10T14:31:53+0100",
   "fingerprint": "e47b38e1fa58200d",
   "sources": [
     {
@@ -144,7 +144,7 @@
     ],
     "bodies": 1,
     "ok": true,
-    "seconds": 0.4
+    "seconds": 0.5
   },
   "matches_dry_run": true,
   "stl_sha256": "d2f20cb34e7f70d5cccdf4e13b2750e5cf2d37b294c44142379d1bb3b364057c",
@@ -154,7 +154,7 @@
     "--size",
     "140",
     "--bed",
-    "P2S",
+    "Bambu Lab P2S",
     "--name",
     "gingerbread-man"
   ]

@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.7.0
+
+- Previews have one look, the one of the README's studio render: a warm light card instead of
+  white, the cutter in orange plastic (wall, flange, cross-section), the cookie in dough colour
+  with the red cutting edge, blue imprints, quiet frames and grid, bold titles over lighter
+  detail lines. The reading, simplify and prepare previews share the palette.
+- The 3D view in the model preview is rendered by a small numpy z-buffer renderer instead of
+  matplotlib's 3D axes: every triangle of the STL with soft key, fill and rim light, ambient
+  occlusion, a soft shadow on a warm floor and 2× supersampling. It no longer shows dark
+  triangles through the walls, and the model fills its frame. No new dependency; a model
+  preview takes about as long as before (+0.2 s for the gingerbread man, 0.1 s faster for an
+  imprint cutter).
+- Only the look changes: the same panels, texts, dimensions, warnings and legend, the same
+  image sizes. Geometry and STL files are unchanged.
+
 ## 1.6.1
 
 - Preview labels no longer overlap the drawing. The top-view legend moved below the plot,
