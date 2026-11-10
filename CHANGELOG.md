@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.1
+
+- Preview labels no longer overlap the drawing. The top-view legend moved below the plot,
+  where the bed outline cannot cross it. Cross-section labels keep a fixed distance from what
+  they describe, with leader lines, and stay inside the frame for any height, wall, flange or
+  bevel angle, in English and Polish. Long file names in the reading preview wrap, and a
+  rejected simplification level is drawn without a frame.
+- Preview images are 770 px tall instead of 715 to make room for the legend. Geometry and STL
+  files are unchanged.
+
 ## 1.6.0
 
 - Save the printers you own in `~/.config/cookie-forge/printers.md` (or `$XDG_CONFIG_HOME`,

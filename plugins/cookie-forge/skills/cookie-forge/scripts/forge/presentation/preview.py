@@ -8,6 +8,13 @@ from ..geometry.design import bed_share
 from ..geometry.profile import bevel_height
 from ..i18n import mm, num, pct, t, val
 
+LEGEND_DROP = 36    # points from the bottom of the top view to its legend: below the tick and axis labels
+
+
+def _wrap(text, width):
+    """Text wrapped to `width` characters; a "red = cutting edge" pair is never split at the equals sign."""
+    return textwrap.fill(text.replace(" = ", "\xa0=\xa0"), width).replace("\xa0", " ")
+
 
 def draw_preview(pr, path, V=None, F=None):
     """Top view of the cookie with the bed, the wall cross-section and, with a mesh, the 3D model."""
@@ -16,22 +23,36 @@ def draw_preview(pr, path, V=None, F=None):
     import matplotlib.pyplot as plt
 
     with_3d = V is not None and F is not None
-    fig = plt.figure(figsize=(16 if with_3d else 12, 6.5), dpi=110)
+    fig = plt.figure(figsize=(16 if with_3d else 12, 7), dpi=110)
     gs = fig.add_gridspec(1, 3 if with_3d else 2, width_ratios=[1.3, 1, 1.1] if with_3d else [1.3, 1])
-    _draw_top_view(fig.add_subplot(gs[0]), pr)
-    _draw_cross_section(fig.add_subplot(gs[1]), pr)
+    top, section = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
+    _draw_top_view(top, pr)
+    _draw_cross_section(section, pr)
     if with_3d:
         _draw_model(fig.add_subplot(gs[2], projection="3d"), V, F)
+    # The frames first, the scale after: a drawing with a fixed aspect would shrink inside its frame and
+    # take its title and legend along, away from where the layout measured them.
     fig.tight_layout()
+    _equal_scale(top)
+    _fit_labels(section)
     fig.savefig(path)
     plt.close(fig)
 
 
 def _draw_top_view(ax, pr):
-    from matplotlib.patches import Rectangle
-    p, k = pr.p, pr.shape
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch, PathPatch, Rectangle
     from matplotlib.path import Path
-    from matplotlib.patches import PathPatch
+    from matplotlib.transforms import offset_copy
+    from shapely import affinity
+    p, k = pr.p, pr.shape
+    flange = dict(facecolor="#d9d9d9", edgecolor="#8c8c8c", linewidth=0.8)
+    wall = dict(facecolor="#9e9e9e", edgecolor="none")
+    cookie = dict(facecolor="#fff3c4", edgecolor="#d62728", linewidth=1.6)
+    imprint = dict(facecolor="#1f77b4", edgecolor="#1f77b4", linewidth=0.5)
+    bridge = dict(facecolor="#8c8c8c", edgecolor="#555", linewidth=0.6, alpha=0.45, hatch="////")
+    bed = dict(linestyle="--", color="#999", linewidth=0.8)
+    margin = dict(linestyle=":", color="#bbb", linewidth=0.6)
 
     def draw_geo(g, **kw):
         for poly in getattr(g, "geoms", [g]):
@@ -45,36 +66,31 @@ def _draw_top_view(ax, pr):
             ax.add_patch(PathPatch(Path(np.vstack(verts), np.concatenate(codes)), **kw))
 
     # the preview shows the cookie as it comes out of the cutter (mirrored model)
-    from shapely import affinity
     def view(g):
         return affinity.scale(g, -1, 1, origin=(0, 0)) if p.get("mirror", True) else g
 
     fl = view(pr.footprint)
-    body = view(k.body)
-    wall = view(k.body.buffer(p["wall"], join_style="round"))
-    draw_geo(fl, facecolor="#d9d9d9", edgecolor="#8c8c8c", linewidth=0.8, zorder=1)
-    draw_geo(wall, facecolor="#9e9e9e", edgecolor="none", zorder=2)
-    draw_geo(body, facecolor="#fff3c4", edgecolor="#d62728", linewidth=1.6, zorder=3)
+    draw_geo(fl, **flange, zorder=1)
+    draw_geo(view(k.body.buffer(p["wall"], join_style="round")), **wall, zorder=2)
+    draw_geo(view(k.body), **cookie, zorder=3)
     for g in pr.ridges:
-        draw_geo(view(g), facecolor="#1f77b4", edgecolor="#1f77b4", linewidth=0.5, zorder=4)
+        draw_geo(view(g), **imprint, zorder=4)
     for b in pr.beams:
-        draw_geo(view(b), facecolor="#8c8c8c", edgecolor="#555", linewidth=0.6, alpha=0.45, hatch="////", zorder=5)
+        draw_geo(view(b), **bridge, zorder=5)
     minx, miny, maxx, maxy = fl.bounds
     if pr.bed:
-        sx, sy = pr.bed[0], pr.bed[1]
+        sx, sy, m = pr.bed[0], pr.bed[1], p["margin"]
         cx, cy = (minx + maxx) / 2, (miny + maxy) / 2
-        ax.add_patch(Rectangle((cx - sx / 2, cy - sy / 2), sx, sy, fill=False, linestyle="--", edgecolor="#999", linewidth=0.8, zorder=0))
-        ax.add_patch(Rectangle((cx - sx / 2 + p["margin"], cy - sy / 2 + p["margin"]), sx - 2 * p["margin"], sy - 2 * p["margin"],
-                               fill=False, linestyle=":", edgecolor="#bbb", linewidth=0.6, zorder=0))
+        ax.add_patch(Rectangle((cx - sx / 2, cy - sy / 2), sx, sy, fill=False, zorder=0, **bed))
+        ax.add_patch(Rectangle((cx - sx / 2 + m, cy - sy / 2 + m), sx - 2 * m, sy - 2 * m, fill=False, zorder=0, **margin))
         ax.set_xlim(cx - sx / 2 - 5, cx + sx / 2 + 5)
         ax.set_ylim(cy - sy / 2 - 5, cy + sy / 2 + 5)
     else:
         ax.set_xlim(minx - 10, maxx + 10)
         ax.set_ylim(miny - 10, maxy + 10)
-    ax.set_aspect("equal")
     ax.set_xlabel("mm")
     lin, area = bed_share(pr)
-    title = k.name + "\n" + t("cookie {w} × {h} mm, with flange {fw} × {fh} mm",
+    title = _wrap(k.name, 70) + "\n" + t("cookie {w} × {h} mm, with flange {fw} × {fh} mm",
                               w=num(pr.cookie_dims[0]), h=num(pr.cookie_dims[1]),
                               fw=num(pr.footprint_dims[0]), fh=num(pr.footprint_dims[1]))
     if lin is not None:
@@ -82,40 +98,96 @@ def _draw_top_view(ax, pr):
                           lin=pct(lin), area=pct(area), x=val(pr.bed[0], 0), y=val(pr.bed[1], 0))
     ax.set_title(title, fontsize=10)
     ax.grid(True, linewidth=0.3, alpha=0.5)
-    ax.text(0.01, 0.01, textwrap.fill(t("red line = cutting edge (cookie view)   blue = imprint   grey = wall / flange   hatched = bridges (above the dough)"), 75),
-            transform=ax.transAxes, fontsize=7, color="#444")
+    # only what this drawing shows; below the axis label, so that nothing in the plot crosses it
+    key = [Line2D([], [], color=cookie["edgecolor"], linewidth=cookie["linewidth"], label=t("cutting edge (cookie view)"))]
+    if pr.ridges:
+        key.append(Patch(**imprint, label=t("imprint")))
+    key += [Patch(**wall, label=t("wall")), Patch(**flange, label=t("flange"))]
+    if pr.beams:
+        key.append(Patch(**bridge, label=t("bridges (above the dough)")))
+    if pr.bed:
+        key += [Line2D([], [], **bed, label=t("print bed")), Line2D([], [], **margin, label=t("bed margin"))]
+    ax.legend(handles=key, loc="upper center", bbox_to_anchor=(0.5, 0), ncol=3, fontsize=8, frameon=False,
+              bbox_transform=offset_copy(ax.transAxes, ax.figure, y=-LEGEND_DROP, units="points"))
 
 
 def _draw_cross_section(ax, pr):
+    """The wall profile with its dimensions. Every label keeps a distance in points from the point it
+    describes, so the gaps are the same at every scale; `_fit_labels` then sets the scale and makes room."""
     from matplotlib.patches import Polygon as MplPoly
+    from matplotlib.transforms import offset_copy
     p = pr.p
     H, FT, FW, W, B = p["height"], p["flange_thickness"], p["flange"], p["wall"], p["blade"]
     BH = bevel_height(p)
-    prof = [(0, 0), (FW, 0), (FW, FT), (W, FT), (W, H - BH), (B, H), (0, H)]
-    ax.add_patch(MplPoly(prof, closed=True, facecolor="#9e9e9e", edgecolor="#333", linewidth=1))
-    ax.plot([-6, 0], [H, H], color="#d62728", linewidth=2)   # dough on the left
-    ax.text(-5.8, H + 0.4, t("dough ←"), color="#d62728", fontsize=8)
+
+    def label(text, at, dx=0, dy=0, leader_to=None, **kw):
+        """Text dx, dy points away from the point `at` (mm), optionally with a leader line to a point."""
+        leader = dict(arrowstyle="-", color="#333", linewidth=0.5, shrinkA=2, shrinkB=0, relpos=(0, 0.5))
+        return ax.annotate(text, leader_to or at, at, textcoords=offset_copy(ax.transData, ax.figure, dx, dy, units="points"),
+                           arrowprops=leader if leader_to else None, in_layout=False, **{"fontsize": 8, **kw})
+
+    ax.add_patch(MplPoly([(0, 0), (FW, 0), (FW, FT), (W, FT), (W, H - BH), (B, H), (0, H)],
+                         closed=True, facecolor="#9e9e9e", edgecolor="#333", linewidth=1))
+    # one column beside the wall; the wall label halfway between the bevel label and the flange, so
+    # that a tall bevel (a short straight wall) does not push it onto the flange
+    beside = dict(dx=18, va="center")
+    bevel_z = H - BH / 2
+    wall_z = (FT + bevel_z) / 2
+    label(t("blade {v}", v=val(B)), (W, H), dy=14, leader_to=(B / 2, H), **beside)
+    label(t("bevel {a}° ({h} mm)", a=val(p["blade_angle"], 0), h=num(BH)), (W, bevel_z),
+          leader_to=((W + B) / 2, bevel_z), **beside)
+    label(t("wall {v}", v=val(W)), (W, wall_z), leader_to=(W, min(wall_z, H - BH)), **beside)
+    label(t("flange {w} × {h}", w=val(FW, 0), h=val(FT, 0)), (FW, 0), dx=8, dy=5, va="bottom")
+
+    left = -6.0                                 # the dough side, left of the wall
     if pr.ridges:
-        hr = H - p["imprint_drop"]
-        gx = -4.0
-        ax.add_patch(MplPoly([(gx - p["imprint_width"] / 2, 0), (gx + p["imprint_width"] / 2, 0), (gx + p["imprint_tip"] / 2, hr), (gx - p["imprint_tip"] / 2, hr)],
-                              closed=True, facecolor="#1f77b4", edgecolor="#1f77b4"))
-        ax.annotate(t("imprint {d} mm lower", d=val(p["imprint_drop"])), (gx, hr), (gx - 1.5, hr - 2.2), fontsize=7, color="#1f77b4")
-    ax.annotate("", (W, H - BH), (B, H), arrowprops=dict(arrowstyle="-", color="#000", linewidth=0.5))
-    ax.text(W + 0.3, H - BH / 2, t("bevel {a}°\n({h} mm)", a=val(p["blade_angle"], 0), h=num(BH)), fontsize=8, va="center")
-    ax.text(B + 0.2, H + 0.4, t("blade {v}", v=val(B)), fontsize=8)
-    ax.text(W + 0.3, (FT + H - BH) / 2 - 2.5, t("wall {v}", v=val(W)), fontsize=8)
-    ax.text(FW / 2, FT + 0.3, t("flange {w} × {h}", w=val(FW, 0), h=val(FT, 0)), fontsize=8, ha="center")
-    ax.annotate("", (-7, 0), (-7, H), arrowprops=dict(arrowstyle="<->", linewidth=0.6))
-    ax.text(-7.3, H / 2, f"{val(H, 0)} mm", rotation=90, va="center", ha="right", fontsize=8)
+        hr, w0, w1 = H - p["imprint_drop"], p["imprint_width"], p["imprint_tip"]
+        gx = -max(4.0, w0 / 2 + 2)
+        left = min(left, gx - w0 / 2 - 1)
+        ax.add_patch(MplPoly([(gx - w0 / 2, 0), (gx + w0 / 2, 0), (gx + w1 / 2, hr), (gx - w1 / 2, hr)],
+                             closed=True, facecolor="#1f77b4", edgecolor="#1f77b4"))
+        label(t("imprint {d} mm lower", d=val(p["imprint_drop"])), (gx, 0), dy=-5, fontsize=7, color="#1f77b4",
+              ha="center", va="top")
+    ax.plot([left, 0], [H, H], color="#d62728", linewidth=2)
+    label(t("dough ←"), (left, H), dy=4, color="#d62728", va="bottom")
+    ax.annotate("", (left - 1, 0), (left - 1, H), arrowprops=dict(arrowstyle="<->", linewidth=0.6))
+    label(f"{val(H, 0)} mm", (left - 1, H / 2), dx=-4, rotation=90, ha="right", va="center")
     ax.axhline(0, color="#777", linewidth=0.8, linestyle="--")
-    ax.text(FW + 0.5, -1.2, t("print bed (z = 0)"), fontsize=7, color="#555")
-    ax.set_xlim(-9, FW + 4)
-    ax.set_ylim(-2.5, H + 3)
-    ax.set_aspect("equal")
+    # at the right edge of the frame, wherever the limits end up
+    ax.annotate(t("print bed (z = 0)"), (1, 0), (-5, -5), xycoords=("axes fraction", "data"), textcoords="offset points",
+                ha="right", va="top", fontsize=7, color="#555", in_layout=False)
+    ax.set_xlim(left - 2, FW + 1)
+    ax.set_ylim(-1, H + 1)
     ax.set_title(t("Wall cross-section (cutter as printed)"), fontsize=10)
     ax.set_xticks([])
     ax.set_yticks([])
+
+
+def _equal_scale(ax):
+    """Extend the limits to the shape of the frame, so that 1 mm is as long across as it is up."""
+    w, h = ax.bbox.size
+    (x0, x1), (y0, y1) = ax.get_xlim(), ax.get_ylim()
+    px_per_mm = min(w / (x1 - x0), h / (y1 - y0))
+    dx, dy = (w / px_per_mm - (x1 - x0)) / 2, (h / px_per_mm - (y1 - y0)) / 2
+    ax.set_xlim(x0 - dx, x1 + dx)
+    ax.set_ylim(y0 - dy, y1 + dy)
+
+
+def _fit_labels(ax, pad=8, rounds=6):
+    """Equal scale with all texts of the drawing `pad` pixels inside the frame. Texts keep their size
+    in points, so making room for them makes them larger in mm: repeat until it settles."""
+    from matplotlib.transforms import Bbox
+    renderer = ax.figure.canvas.get_renderer()
+    _equal_scale(ax)
+    for _ in range(rounds):
+        need = Bbox.union([tx.get_window_extent(renderer) for tx in ax.texts]).padded(pad)
+        (x0, y0), (x1, y1) = ax.transData.inverted().transform(need.get_points())
+        (xa, xb), (ya, yb) = ax.get_xlim(), ax.get_ylim()
+        if xa <= x0 and x1 <= xb and ya <= y0 and y1 <= yb:
+            break
+        ax.set_xlim(min(xa, x0), max(xb, x1))
+        ax.set_ylim(min(ya, y0), max(yb, y1))
+        _equal_scale(ax)
 
 
 def _draw_model(ax, V, F):
@@ -171,11 +243,12 @@ def draw_detection(sources_shapes, path, show_imprint=True):
         minx, miny, maxx, maxy = k.body.bounds
         m = 0.05 * max(maxx - minx, maxy - miny)
         ax.set_xlim(minx - m, maxx + m); ax.set_ylim(miny - m, maxy + m)
-        ax.set_aspect("equal"); ax.set_title(title, fontsize=9); ax.set_xticks([]); ax.set_yticks([])
+        # a long file name stays above its own drawing
+        ax.set_aspect("equal"); ax.set_title(_wrap(title, 60), fontsize=9); ax.set_xticks([]); ax.set_yticks([])
     for ax in list(axes.flat)[n:]:
         ax.set_axis_off()
     # wrapped to the figure width, so the title is never cut off
-    fig.suptitle(textwrap.fill(t("Template reading: red = cutting edge, blue = imprint (view as in the image)"), 60 * cols), fontsize=10)
+    fig.suptitle(_wrap(t("Template reading: red = cutting edge, blue = imprint (view as in the image)"), 60 * cols), fontsize=10)
     fig.savefig(path)
     plt.close(fig)
 
@@ -208,12 +281,14 @@ def draw_simplify(name, variants, path):
             title += "\n" + t("narrowest notch {gap} · {tri} triangles",
                                gap=mm(v["gap"], 1) if v["gap"] else "-", tri=num(v["triangles"], 0))
         else:
-            ax.text(0.5, 0.5, textwrap.fill(t("rejected: it would merge or split outlines or close a hole"), 28),
+            # no frame: the frame of a narrow shape would cross the text
+            ax.set_axis_off()
+            ax.text(0.5, 0.5, _wrap(t("rejected: it would merge or split outlines or close a hole"), 28),
                     ha="center", va="center", transform=ax.transAxes, fontsize=10, color="#555555")
         ax.set_xlim(minx - m, maxx + m); ax.set_ylim(miny - m, maxy + m)
         ax.set_aspect("equal"); ax.set_title(title, fontsize=10); ax.set_xticks([]); ax.set_yticks([])
-    fig.suptitle(textwrap.fill(t("{name}: outline simplification - red = cutting edge, grey = template outline", name=name),
-                               55 * len(variants)), fontsize=11)
+    fig.suptitle(_wrap(t("{name}: outline simplification - red = cutting edge, grey = template outline", name=name),
+                       55 * len(variants)), fontsize=11)
     fig.savefig(path)
     plt.close(fig)
 
