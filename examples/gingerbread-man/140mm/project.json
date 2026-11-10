@@ -1,0 +1,161 @@
+{
+  "schema": "cookie-forge/project",
+  "schema_version": 2,
+  "layout_version": 3,
+  "generator": {
+    "name": "cookie-forge",
+    "version": "1.6.0"
+  },
+  "id": "gingerbread-man",
+  "name": "gingerbread-man",
+  "stage": "built",
+  "updated": "2026-11-10T12:15:18+0100",
+  "fingerprint": "e47b38e1fa58200d",
+  "sources": [
+    {
+      "role": "source",
+      "file": "source.png",
+      "original": "gingerbread-man.png",
+      "sha256": "b422ca0965e0c7f7bb71ca89683c41dd2475852a1f8704769891cf1c3bc43508",
+      "page": null
+    }
+  ],
+  "options": {
+    "size": 140.0,
+    "mode": "auto",
+    "split": false,
+    "scale": "shared",
+    "threshold": "auto",
+    "invert": false,
+    "dpi": 200,
+    "holes": "imprint",
+    "imprint": "none",
+    "imprint_seams": false,
+    "rotate": 0.0,
+    "mirror": true,
+    "bridges": true,
+    "dough": null,
+    "simplify_level": "none"
+  },
+  "parameters": {
+    "height": 18.0,
+    "wall": 1.2,
+    "blade": 0.45,
+    "blade_angle": 10.0,
+    "flange": 5.0,
+    "flange_thickness": 2.0,
+    "imprint_width": 1.0,
+    "imprint_tip": 0.6,
+    "imprint_drop": 3.5,
+    "bridge_width": 4.0,
+    "smooth": 0.3,
+    "simplify": 0.08,
+    "step": 0.2,
+    "margin": 10.0
+  },
+  "printer": {
+    "name": "Bambu Lab P2S",
+    "bed_mm": [
+      256,
+      256,
+      256
+    ],
+    "margin_mm": 10.0
+  },
+  "result": {
+    "cookie_mm": [
+      97.099,
+      140.0
+    ],
+    "footprint_mm": [
+      107.098,
+      150.0
+    ],
+    "bed_share_pct": {
+      "longer_side": 58.6,
+      "area": 24.5
+    },
+    "bevel_height_mm": 4.253,
+    "smoothing": {
+      "radius_mm": 0.3002,
+      "simplify_mm": 0.08,
+      "rescale": 1.000565,
+      "template_px_mm": 0.102,
+      "threshold": {
+        "mode": "auto",
+        "value": 133.0
+      }
+    },
+    "imprint": {
+      "ridges": 0,
+      "holes_cut": 0,
+      "holes_imprint": 0,
+      "depth_mm": null
+    },
+    "bridges": {
+      "count": 0
+    },
+    "simplification": null,
+    "checks": {
+      "thinnest_mm": 21.16,
+      "narrowest_mm": 2.17,
+      "fits_bed": true,
+      "fits_height": true,
+      "outlines": 1,
+      "through_holes": 0
+    }
+  },
+  "warnings": [],
+  "fixes": [
+    "after smoothing, scaled by × 1.0006 so the longest side is exactly 140.0 mm"
+  ],
+  "files": [
+    {
+      "path": "cutter.stl",
+      "role": "stl",
+      "status": "created"
+    },
+    {
+      "path": "preview.png",
+      "role": "preview",
+      "status": "created"
+    },
+    {
+      "path": "source.png",
+      "role": "source",
+      "status": "created"
+    },
+    {
+      "path": "project.json",
+      "role": "manifest",
+      "status": "created"
+    }
+  ],
+  "stl_check": {
+    "triangles": 45328,
+    "watertight": true,
+    "winding_consistent": true,
+    "volume_cm3": 15.823276628353959,
+    "pla_mass_g": 19.620863019158907,
+    "extents": [
+      107.09767532348633,
+      150.0,
+      18.0
+    ],
+    "bodies": 1,
+    "ok": true,
+    "seconds": 0.4
+  },
+  "matches_dry_run": true,
+  "stl_sha256": "d2f20cb34e7f70d5cccdf4e13b2750e5cf2d37b294c44142379d1bb3b364057c",
+  "build_args": [
+    "build",
+    "gingerbread-man.png",
+    "--size",
+    "140",
+    "--bed",
+    "P2S",
+    "--name",
+    "gingerbread-man"
+  ]
+}
